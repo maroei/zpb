@@ -1,0 +1,1622 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+  <meta charset="UTF-8" />
+  <title>Inforium Studio – Ziekenhuisbrede Communicatie & Video Builder (prototype)</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root {
+      --bg: #f3f4f8;
+      --bg-panel: #ffffff;
+      --border: #dde3ee;
+      --accent: #2563eb;
+      --accent-soft: #e0ecff;
+      --accent-strong: #1d4ed8;
+      --text: #111827;
+      --muted: #6b7280;
+      --lane-bg: #f9fafb;
+      --card-bg: #ffffff;
+      --shadow-soft: 0 4px 10px rgba(15, 23, 42, 0.08);
+      --radius-lg: 16px;
+      --radius-pill: 999px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top left, #e0f2fe, #eef2ff 40%, #f9fafb);
+      color: var(--text);
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: stretch;
+    }
+
+    /* INTRO */
+    #introScreen {
+      width: 100%;
+      max-width: 520px;
+      margin: auto;
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 20px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+      padding: 24px 24px 18px;
+      border: 1px solid rgba(148, 163, 184, 0.4);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    #introHeader { display: flex; align-items: center; gap: 10px; }
+    #introLogo {
+      width: 40px; height: 40px; border-radius: 14px;
+      background: conic-gradient(from 140deg, #2563eb, #22c55e, #f97316, #2563eb);
+      display: flex; align-items: center; justify-content: center;
+      color: #f9fafb; font-weight: 800; font-size: 18px;
+    }
+    #introTitle h1 { margin: 0; font-size: 18px; font-weight: 800; }
+    #introTitle span { font-size: 13px; color: var(--muted); }
+
+    .intro-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .intro-form-group { display: flex; flex-direction: column; gap: 4px; margin-top: 2px; }
+    .intro-form-group label { font-size: 12px; font-weight: 600; color: var(--muted); }
+    .intro-form-group input, .intro-form-group select {
+      border-radius: 999px; border: 1px solid var(--border);
+      padding: 7px 12px; font-size: 13px; background: #f9fafb;
+    }
+    #introHint { font-size: 11px; color: var(--muted); margin-top: 2px; }
+    .intro-footer { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+    .intro-footer small { color: var(--muted); font-size: 11px; }
+
+    .btn-primary, .btn-secondary {
+      font-size: 13px; border-radius: var(--radius-pill);
+      padding: 7px 14px; border: none; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; white-space: nowrap;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+      color: white; box-shadow: 0 2px 12px rgba(37, 99, 235, 0.45);
+    }
+    .btn-primary:hover { filter: brightness(1.05); }
+    .btn-secondary { background: #f9fafb; color: var(--text); border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #eef2ff; }
+    .hidden { display: none !important; }
+
+    /* APP */
+    .app-shell {
+      display: flex; flex-direction: column; height: 100vh;
+      width: 100%; max-width: 1500px; margin: auto;
+      backdrop-filter: blur(8px);
+    }
+    header {
+      padding: 10px 18px;
+      background: linear-gradient(120deg, rgba(37, 99, 235, 0.95), rgba(56, 189, 248, 0.9));
+      border-bottom: 1px solid rgba(148, 163, 184, 0.4);
+      display: flex; align-items: center; justify-content: space-between;
+      color: white;
+    }
+    header .title { font-weight: 700; font-size: 16px; display: flex; align-items: center; gap: 10px; }
+    header .logo-dot {
+      width: 24px; height: 24px; border-radius: 8px;
+      background: rgba(15, 23, 42, 0.85);
+      border: 2px solid rgba(191, 219, 254, 0.8);
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 900;
+    }
+    header .subtitle { font-size: 12px; color: rgba(226, 232, 240, 0.92); font-weight: 500; }
+    header .right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+    .org-line { font-size: 12px; opacity: 0.95; }
+    .org-line span { font-weight: 800; }
+
+    body.theme-amstelland header { background: linear-gradient(135deg, #7c3aed, #db2777); }
+    body.theme-wza header { background: linear-gradient(135deg, #0f766e, #22c55e); }
+    body.theme-slingeland header { background: linear-gradient(135deg, #0369a1, #22c55e); }
+    body.theme-generic header { background: linear-gradient(135deg, #2563eb, #22c55e); }
+
+    .main {
+      flex: 1;
+      display: grid;
+      grid-template-columns: 340px minmax(0, 1.7fr) 360px;
+      gap: 10px;
+      padding: 10px 10px 14px;
+      overflow: hidden;
+    }
+    .panel {
+      background: rgba(255, 255, 255, 0.98);
+      border-radius: var(--radius-lg);
+      border: 1px solid var(--border);
+      box-shadow: var(--shadow-soft);
+      display: flex; flex-direction: column;
+      overflow: hidden; min-height: 0;
+      backdrop-filter: blur(12px);
+    }
+    .panel-header {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .panel-header h2 {
+      margin: 0; font-size: 14px; font-weight: 800;
+      display: flex; align-items: center; gap: 6px;
+    }
+    .panel-header h2 span.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+    .panel-header .subtitle { font-size: 11px; color: var(--muted); }
+    .panel-body { padding: 10px; flex: 1; overflow: auto; }
+
+    .chip {
+      font-size: 11px; border-radius: var(--radius-pill);
+      padding: 4px 10px; border: 1px solid var(--border);
+      background: #f9fafb; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 4px;
+    }
+    .chip span.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+    .search-row { display: flex; gap: 6px; margin-bottom: 8px; }
+    .search-row input {
+      flex: 1; padding: 6px 10px;
+      border-radius: 999px; border: 1px solid var(--border);
+      font-size: 13px; background: #f9fafb;
+    }
+    .template-row { display: flex; gap: 4px; align-items: center; margin-bottom: 8px; }
+    .template-row select {
+      flex: 1; padding: 5px 8px; border-radius: 999px;
+      border: 1px solid var(--border); font-size: 12px; background: #f9fafb;
+    }
+    .template-row button { font-size: 11px; padding: 5px 10px; border-radius: 999px; }
+
+    .dropdown-group {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 6px; margin-bottom: 8px;
+    }
+    .dropdown-group label {
+      font-size: 10px; color: var(--muted);
+      margin-bottom: 2px; display: block; font-weight: 700;
+    }
+    .dropdown-group select {
+      width: 100%; padding: 5px 8px;
+      border-radius: 999px; border: 1px solid var(--border);
+      font-size: 11px; background: #f9fafb;
+    }
+
+    .fragment-list { display: flex; flex-direction: column; gap: 8px; }
+
+    .fragment-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 8px 10px;
+      font-size: 12px;
+      display: flex; flex-direction: column; gap: 4px;
+      cursor: grab;
+      box-shadow: 0 2px 6px rgba(15, 23, 42, 0.05);
+      transition: transform 0.1s, box-shadow 0.1s;
+      position: relative;
+    }
+    .fragment-card:hover { transform: translateY(-1px); box-shadow: 0 5px 10px rgba(15, 23, 42, 0.08); }
+    .fragment-card.dragging { opacity: 0.4; }
+
+    .fragment-card .row-top { display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+
+    .fragment-card .avatar-pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      font-size: 11px; padding: 3px 9px;
+      border-radius: 999px;
+      background: var(--accent-soft); color: var(--accent);
+      font-weight: 700;
+    }
+    .fragment-card .avatar-pill span.icon {
+      width: 16px; height: 16px; border-radius: 999px;
+      background: white; display: inline-flex; align-items: center; justify-content: center;
+      font-size: 10px;
+    }
+
+    .fragment-card .title { font-weight: 900; font-size: 12px; }
+    .snippet { font-size: 11px; color: #4b5563; line-height: 1.3; }
+
+    /* Hide snippet in library; show in storyboard */
+    .fragment-list .fragment-card .snippet { display: none; }
+    .lane-body .fragment-card .snippet { display: block; }
+
+    .meta-row { display: flex; flex-wrap: wrap; gap: 4px; color: var(--muted); }
+
+    .badge {
+      padding: 2px 6px;
+      border-radius: 999px;
+      background: #eff2fb;
+      font-size: 10px;
+      font-weight: 700;
+    }
+    .badge.code { background: #f4f4f5; }
+    .badge.duration { background: #ecfdf3; color: #166534; }
+    .badge.hospital { background: #e0f2fe; color: #075985; }
+    .badge.dept { background: #fef9c3; color: #92400e; }
+    .badge.sender { background: #e0e7ff; color: #3730a3; }
+    .badge.type { background: #fae8ff; color: #86198f; }
+    .badge.channel { background: #fee2e2; color: #b91c1c; }
+    .badge.timing { background: #dcfce7; color: #166534; }
+    .badge.recipient { background: #cffafe; color: #155e75; }
+
+    .remove-btn {
+      position: absolute; top: 4px; right: 4px;
+      width: 18px; height: 18px; border-radius: 999px;
+      border: none; font-size: 11px; cursor: pointer;
+      background: #fee2e2; color: #b91c1c;
+      display: none; align-items: center; justify-content: center;
+    }
+    .lane-body .fragment-card .remove-btn { display: flex; }
+
+    /* LANES */
+    .lanes {
+      display: flex; gap: 10px; align-items: flex-start;
+      min-height: 0; overflow-x: auto; padding-bottom: 8px;
+    }
+    .lane {
+      background: var(--lane-bg);
+      border-radius: 14px;
+      border: 1px dashed var(--border);
+      min-width: 280px; max-width: 380px;
+      display: flex; flex-direction: column;
+      padding: 8px; min-height: 320px;
+    }
+    .lane-header {
+      display: flex; justify-content: space-between; align-items: center;
+      font-size: 12px; margin-bottom: 6px; color: var(--muted);
+    }
+    .lane-header .name { font-weight: 900; color: var(--text); }
+    .lane-body {
+      display: flex; flex-direction: column; gap: 8px;
+      min-height: 210px; padding: 10px;
+      border-radius: 10px;
+      transition: background 0.15s, border-color 0.15s;
+      background: #f3f4f6;
+    }
+    .lane-body.empty::before { content: "Sleep fragmenten hierheen"; font-size: 11px; color: var(--muted); opacity: 0.85; }
+    .lane-body.drag-over { background: #e0f2fe; border: 1px dashed var(--accent); }
+    .lane-footer {
+      font-size: 10px; color: var(--muted);
+      margin-top: 6px; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .timeline {
+      margin-top: 8px; padding: 6px 8px;
+      border-radius: 999px; background: #f9fafb;
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 11px; border: 1px dashed var(--border);
+    }
+    .timeline .bar {
+      flex: 1; height: 6px; border-radius: 999px;
+      background: #e5e7eb; margin: 0 8px; position: relative; overflow: hidden;
+    }
+    .timeline .bar-fill {
+      position: absolute; inset: 0 100% 0 0; border-radius: inherit;
+      background: linear-gradient(90deg, #22c55e, #eab308, #ef4444);
+      transition: inset 0.2s;
+    }
+
+    /* SETTINGS */
+    .settings-group { margin-bottom: 10px; }
+    .settings-group label {
+      display: block; font-size: 11px; font-weight: 900;
+      margin-bottom: 3px; color: var(--muted);
+    }
+    .settings-group select, .settings-group input[type="file"] {
+      width: 100%; padding: 6px 8px;
+      border-radius: 10px; border: 1px solid var(--border);
+      font-size: 12px; background: #f9fafb;
+    }
+    .settings-group small { display: block; font-size: 10px; color: var(--muted); margin-top: 2px; }
+    .settings-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+    .divider { border-top: 1px solid var(--border); margin: 10px 0; }
+
+    .detail-block { font-size: 12px; color: var(--muted); }
+    .detail-block h3 { font-size: 13px; margin: 0 0 6px; color: var(--text); }
+    .detail-block p { margin: 0 0 6px; }
+    .detail-block code { background: #f3f4f6; padding: 1px 4px; border-radius: 4px; font-size: 11px; }
+    .pill-row { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 6px; }
+    .pill { font-size: 10px; padding: 2px 8px; border-radius: 999px; background: #eef2ff; color: #4338ca; font-weight: 800; }
+
+    @media (max-width: 1180px) { .main { grid-template-columns: 1fr; } }
+
+    /* PREVIEW MODAL */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55);
+      display: none; align-items: center; justify-content: center;
+      padding: 16px; z-index: 9999;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      width: min(900px, 96vw); max-height: 88vh;
+      background: rgba(255,255,255,0.98);
+      border: 1px solid rgba(148, 163, 184, 0.5);
+      border-radius: 18px; box-shadow: 0 18px 60px rgba(15,23,42,0.35);
+      display: flex; flex-direction: column; overflow: hidden;
+    }
+    .modal-header {
+      padding: 10px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 8px;
+    }
+    .modal-header h3 { margin: 0; font-size: 14px; font-weight: 900; }
+    .modal-body { padding: 12px; overflow: auto; }
+    .preview-meta { font-size: 12px; color: var(--muted); margin-bottom: 10px; }
+    .preview-textarea {
+      width: 100%; min-height: 320px; resize: vertical;
+      padding: 10px 12px; border-radius: 12px; border: 1px solid var(--border);
+      background: #f9fafb; font-size: 13px; line-height: 1.45; white-space: pre-wrap;
+    }
+    .modal-actions { display: flex; gap: 8px; align-items: center; }
+  </style>
+</head>
+
+<body class="theme-generic">
+  <!-- INTRO -->
+  <div id="introScreen">
+    <div id="introHeader">
+      <div id="introLogo">IS</div>
+      <div id="introTitle">
+        <h1>Ziekenhuisbrede Communicatie & Video Builder</h1>
+        <span>Algemene ziekenhuisinfo + afspraken + telefonie/SCC + logistiek + medisch (voorbeeld: KNO/MDL/Gyn).</span>
+      </div>
+    </div>
+
+    <div class="intro-grid">
+      <div class="intro-form-group">
+        <label for="orgName">Organisatie / ziekenhuis</label>
+        <input type="text" id="orgName" placeholder="Bijv. Amstelland Ziekenhuis" />
+      </div>
+      <div class="intro-form-group">
+        <label for="introHospital">Huisstijl (voorbeeld)</label>
+        <select id="introHospital">
+          <option value="generic">Algemene stijl</option>
+          <option value="amstelland">Amstelland Ziekenhuis</option>
+          <option value="wza">Wilhelmina Ziekenhuis Assen</option>
+          <option value="slingeland">Slingeland Ziekenhuis</option>
+        </select>
+      </div>
+      <div class="intro-form-group">
+        <label for="userName">Uw naam</label>
+        <input type="text" id="userName" placeholder="Bijv. dr. Markus Oei" />
+      </div>
+      <div class="intro-form-group">
+        <label for="userEmail">E-mailadres</label>
+        <input type="email" id="userEmail" placeholder="Bijv. naam@ziekenhuis.nl" />
+      </div>
+    </div>
+
+    <div id="introHint">
+      Tip: begin met een sjabloon (bibliotheek → sjablonen), pas daarna fragmenten aan.
+    </div>
+
+    <div class="intro-footer">
+      <small>Prototype: drag & drop + preview + Word-export + sjablonen</small>
+      <button class="btn-primary" id="introContinue">Start storyboard</button>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app-shell hidden" id="appShell">
+    <header>
+      <div class="title">
+        <span class="logo-dot">IS</span>
+        <div>
+          <div>Ziekenhuisbrede Builder</div>
+          <div class="subtitle">Algemeen + afspraken + SCC/telefonie + logistiek + medisch</div>
+        </div>
+      </div>
+      <div class="right">
+        <div class="org-line" id="orgLineLabel">Organisatie: <span>-</span></div>
+        <div>
+          <button class="btn-secondary" id="btn-preview-top">Preview</button>
+          <button class="btn-secondary" id="btn-new-storyboard">Nieuw storyboard</button>
+          <button class="btn-primary" id="btn-generate-top">Genereer output</button>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <!-- LEFT: LIBRARY -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2><span class="dot"></span> Fragment-bibliotheek</h2>
+          <span class="chip"><span class="dot"></span> ziekenhuisbreed</span>
+        </div>
+        <div class="panel-body">
+          <div class="search-row">
+            <input type="text" id="searchInput" placeholder="Zoek op titel, code of tekst…" />
+            <button class="btn-secondary" id="btn-reset-filters">Reset</button>
+          </div>
+
+          <div class="template-row">
+            <select id="templateSelect">
+              <option value="">Kies sjabloon…</option>
+            </select>
+            <button class="btn-secondary" id="btn-load-template">Laad</button>
+          </div>
+
+          <div class="dropdown-group">
+            <div>
+              <label for="filterHospital">Ziekenhuis</label>
+              <select id="filterHospital">
+                <option value="">Alle</option>
+                <option value="AMSTELLAND">Amstelland</option>
+                <option value="WZA">WZA Assen</option>
+                <option value="SLINGELAND">Slingeland</option>
+                <option value="ALL">Algemeen</option>
+              </select>
+            </div>
+            <div>
+              <label for="filterDept">Afdeling</label>
+              <select id="filterDept">
+                <option value="">Alle</option>
+                <option value="KNO">KNO</option>
+                <option value="MDL">MDL</option>
+                <option value="GYN">Gynaecologie</option>
+                <option value="RECEPTIE">Receptie</option>
+                <option value="COMM">Communicatie</option>
+                <option value="SCC">Service Contact Centrum</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dropdown-group">
+            <div>
+              <label for="filterSenderRole">Afzenderrol</label>
+              <select id="filterSenderRole">
+                <option value="">Alle</option>
+                <option value="POLI">Polikliniek</option>
+                <option value="RECEPTIE">Receptie</option>
+                <option value="COMM">Communicatie</option>
+                <option value="SCC">SCC/Telefooncentrum</option>
+              </select>
+            </div>
+            <div>
+              <label for="filterInfoType">Type info</label>
+              <select id="filterInfoType">
+                <option value="">Alle</option>
+                <option value="GENERAL">Algemeen ziekenhuis</option>
+                <option value="APPOINTMENT">Afspraken / no-show</option>
+                <option value="PHONE">Telefonie / contact</option>
+                <option value="LOGISTICS">Logistiek</option>
+                <option value="MEDICAL">Medisch</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dropdown-group">
+            <div>
+              <label for="filterChannel">Kanaal</label>
+              <select id="filterChannel">
+                <option value="">Alle</option>
+                <option value="PORTAL">Portaal</option>
+                <option value="LETTER">Brief</option>
+                <option value="EMAIL">E-mail</option>
+                <option value="SMS">SMS</option>
+                <option value="PHONE">Telefoon</option>
+                <option value="QR">QR-code</option>
+              </select>
+            </div>
+            <div>
+              <label for="filterMoment">Moment</label>
+              <select id="filterMoment">
+                <option value="">Alle</option>
+                <option value="BOOKING">Bij afspraakbevestiging</option>
+                <option value="DAYS_BEFORE">Enkele dagen vóór</option>
+                <option value="DAY_BEFORE">Dag vóór</option>
+                <option value="DAY_OF">Dag van bezoek</option>
+                <option value="AFTER">Na contact/afspraak</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dropdown-group">
+            <div>
+              <label for="filterRecipient">Ontvanger</label>
+              <select id="filterRecipient">
+                <option value="">Alle</option>
+                <option value="PATIENT">Patiënt</option>
+                <option value="PARTNER">Partner/naaste</option>
+                <option value="CAREGIVER">Begeleider</option>
+              </select>
+            </div>
+            <div>
+              <label for="filterLevel">Taalniveau</label>
+              <select id="filterLevel">
+                <option value="">Alle</option>
+                <option value="A2">A2</option>
+                <option value="B1">B1</option>
+                <option value="NORMAL">Normaal</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="dropdown-group">
+            <div>
+              <label for="filterVuln">Kwetsbare groep</label>
+              <select id="filterVuln">
+                <option value="">Alle</option>
+                <option value="DAL">DAL / lage gezondheidsvaardigheden</option>
+                <option value="MIGRANT">Anderstalig</option>
+                <option value="REGULAR">Geen specifiek</option>
+              </select>
+            </div>
+            <div>
+              <label for="filterLane">Storyboardkolom</label>
+              <select id="filterLane">
+                <option value="">Alle</option>
+                <option value="WELCOME">Welkom & oriëntatie</option>
+                <option value="CONTACT">Contact & bereikbaarheid</option>
+                <option value="APPT_PREP">Afspraak & voorbereiding</option>
+                <option value="DAY">Dag van bezoek/contact</option>
+                <option value="MEDICAL">Medische uitleg</option>
+                <option value="FOLLOWUP">Vervolg & hulp</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="fragment-list" id="fragmentList"></div>
+        </div>
+      </section>
+
+      <!-- MIDDLE: STORYBOARD -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2><span class="dot"></span> Storyboard – ziekenhuisbreed</h2>
+          <span class="subtitle" id="durationSummary">Totale duur: 0 sec</span>
+        </div>
+        <div class="panel-body">
+          <div class="lanes" id="lanes"></div>
+          <div class="timeline">
+            <span>Globale lengte</span>
+            <div class="bar"><div class="bar-fill" id="timelineFill"></div></div>
+            <span id="timelineLabel">0:00</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- RIGHT: SETTINGS & DETAILS -->
+      <section class="panel">
+        <div class="panel-header">
+          <h2><span class="dot"></span> Instellingen & details</h2>
+        </div>
+        <div class="panel-body">
+          <div class="detail-block" id="detailBlock">
+            <h3>Fragment-details</h3>
+            <p><strong>Klik een fragment in het storyboard.</strong></p>
+            <p>Titel en volledige tekst staan bovenaan voor snelle controle.</p>
+          </div>
+
+          <div class="divider"></div>
+
+          <div class="settings-group">
+            <label for="hospitalSelect">Ziekenhuisstijl</label>
+            <select id="hospitalSelect">
+              <option value="generic">Algemeen</option>
+              <option value="amstelland">Amstelland Ziekenhuis</option>
+              <option value="wza">Wilhelmina Ziekenhuis Assen</option>
+              <option value="slingeland">Slingeland Ziekenhuis</option>
+            </select>
+            <small>Kleurt de interface en gaat mee in export.</small>
+          </div>
+
+          <div class="settings-group">
+            <label for="avatarSelect">Avatar</label>
+            <select id="avatarSelect">
+              <option value="NURSE_NEUTRAL">Neutrale verpleegkundige</option>
+              <option value="MD_GENERAL">Arts (algemeen)</option>
+              <option value="SCC_AGENT">SCC medewerker</option>
+              <option value="RECEPTION">Receptiemedewerker</option>
+              <option value="MD_KNO">KNO-arts</option>
+              <option value="MD_GYN">Gynaecoloog</option>
+              <option value="MD_MDL">MDL-arts</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="backgroundSelect">Achtergrond</label>
+            <select id="backgroundSelect">
+              <option value="HALL">Ziekenhuishal / entree</option>
+              <option value="RECEPTION">Receptie / balie</option>
+              <option value="CALLCENTER">Contactcentrum</option>
+              <option value="CONSULT_ROOM">Spreekkamer</option>
+              <option value="WAITING">Wachtruimte</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="orientationSelect">Videostand</label>
+            <select id="orientationSelect">
+              <option value="landscape">Landscape (16:9)</option>
+              <option value="portrait">Portrait (9:16)</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="languageSelect">Taal & niveau</label>
+            <select id="languageSelect">
+              <option value="nl-A2">Nederlands – A2</option>
+              <option value="nl-B1">Nederlands – B1</option>
+              <option value="nl-NORMAL">Nederlands – Normaal</option>
+              <option value="en-B1">Engels – B1</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="recipientSelect">Ontvanger</label>
+            <select id="recipientSelect">
+              <option value="PATIENT">Patiënt</option>
+              <option value="PARTNER">Partner / naaste</option>
+              <option value="CAREGIVER">Begeleider / professional</option>
+            </select>
+          </div>
+
+          <div class="settings-group">
+            <label for="logoInput">Logo organisatie (optioneel)</label>
+            <input type="file" id="logoInput" accept="image/*" />
+            <small>In dit prototype wordt alleen de bestandsnaam geregistreerd.</small>
+          </div>
+
+          <div class="settings-actions">
+            <button class="btn-secondary" id="btn-preview">Preview</button>
+            <button class="btn-primary" id="btn-generate">Genereer output</button>
+            <button class="btn-secondary" id="btn-export-json">Export storyboard JSON</button>
+            <button class="btn-secondary" id="btn-export-word">Export Word-rapport</button>
+            <button class="btn-secondary" id="btn-save-template">Opslaan als sjabloon</button>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <!-- PREVIEW MODAL -->
+  <div class="modal-overlay" id="previewOverlay" aria-hidden="true">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="previewTitle">
+      <div class="modal-header">
+        <h3 id="previewTitle">Preview – samengestelde tekst</h3>
+        <div class="modal-actions">
+          <button class="btn-secondary" id="btn-copy-preview">Kopieer tekst</button>
+          <button class="btn-secondary" id="btn-close-preview">Sluiten</button>
+        </div>
+      </div>
+      <div class="modal-body">
+        <div class="preview-meta" id="previewMeta"></div>
+        <textarea class="preview-textarea" id="previewText" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // ===== ORG INFO =====
+    const introScreen = document.getElementById("introScreen");
+    const appShell = document.getElementById("appShell");
+    const orgNameInput = document.getElementById("orgName");
+    const userNameInput = document.getElementById("userName");
+    const userEmailInput = document.getElementById("userEmail");
+    const introHospitalSelect = document.getElementById("introHospital");
+    const introContinueBtn = document.getElementById("introContinue");
+    const orgLineLabel = document.getElementById("orgLineLabel");
+
+    const orgInfo = { organization: "", userName: "", email: "", hospitalTheme: "generic", logoFileName: "" };
+
+    introContinueBtn.addEventListener("click", () => {
+      orgInfo.organization = orgNameInput.value.trim() || "Onbekende organisatie";
+      orgInfo.userName = userNameInput.value.trim() || "Onbekende gebruiker";
+      orgInfo.email = userEmailInput.value.trim() || "-";
+      orgInfo.hospitalTheme = introHospitalSelect.value || "generic";
+
+      orgLineLabel.innerHTML = `Organisatie: <span>${orgInfo.organization}</span>`;
+      document.body.className = `theme-${orgInfo.hospitalTheme}`;
+
+      introScreen.classList.add("hidden");
+      appShell.classList.remove("hidden");
+      hospitalSelectEl.value = orgInfo.hospitalTheme;
+    });
+
+    // ===== ENUM MAPS =====
+    const momentMap = {
+      BOOKING: "Bij afspraakbevestiging",
+      DAYS_BEFORE: "Enkele dagen vóór",
+      DAY_BEFORE: "Dag vóór",
+      DAY_OF: "Dag van bezoek/contact",
+      AFTER: "Na contact/afspraak"
+    };
+    const recipientMap = { PATIENT: "Patiënt", PARTNER: "Partner/naaste", CAREGIVER: "Begeleider" };
+    const infoTypeMap = {
+      GENERAL: "Algemeen ziekenhuis",
+      APPOINTMENT: "Afspraken/no-show",
+      PHONE: "Telefonie/contact",
+      LOGISTICS: "Logistiek",
+      MEDICAL: "Medisch"
+    };
+    const channelMap = { PORTAL: "Portaal", LETTER: "Brief", EMAIL: "E-mail", SMS: "SMS", PHONE: "Telefoon", QR: "QR-code" };
+    const senderRoleMap = { POLI: "Polikliniek", RECEPTIE: "Receptie", COMM: "Communicatie", SCC: "SCC/Telefooncentrum" };
+    const vulnMap = {
+      REGULAR: "Geen specifiek",
+      DAL: "DAL/lage gezondheidsvaardigheden",
+      MIGRANT: "Anderstalig"
+    };
+
+    // ===== FRAGMENTS (hospital-wide + KNO/MDL/GYN examples) =====
+    // Fields:
+    // id, code, title, text, duration, language, level, hospital,
+    // dept, senderRole, infoType, channel, moment, recipient, vuln, lane, tags
+    const fragments = [
+      // --- GENERAL HOSPITAL / COMM ---
+      {
+        id: "g1",
+        code: "ZH-COMM-GEN-WELK-NL-A2-001",
+        title: "Welkom in het ziekenhuis (algemeen)",
+        text: "Welkom in ons ziekenhuis. In deze video leggen we kort uit hoe uw bezoek meestal verloopt: binnenkomst, aanmelden, wachten en uw afspraak.",
+        duration: 28, language: "nl", level: "A2", hospital: "ALL",
+        dept: "COMM", senderRole: "COMM", infoType: "GENERAL", channel: "PORTAL",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "DAL", lane: "WELCOME",
+        tags: ["welkom","algemeen"]
+      },
+      {
+        id: "g2",
+        code: "ZH-COMM-GEN-PORT-NL-B1-001",
+        title: "Zo werkt het patiëntenportaal",
+        text: "Via het patiëntenportaal kunt u afspraken zien, berichten lezen en soms vragenlijsten invullen. We laten zien waar u inlogt en waar u hulp kunt krijgen.",
+        duration: 32, language: "nl", level: "B1", hospital: "ALL",
+        dept: "COMM", senderRole: "COMM", infoType: "GENERAL", channel: "PORTAL",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "REGULAR", lane: "CONTACT",
+        tags: ["portaal","inloggen"]
+      },
+
+      // --- RECEPTIE / LOGISTICS ---
+      {
+        id: "r1",
+        code: "ZH-REC-LOG-ROUTE-NL-A2-001",
+        title: "Route, parkeren en ingang",
+        text: "Komt u met de auto? Parkeer in de parkeergarage of op het terrein. Volg de borden naar de hoofdingang. We laten het stap voor stap zien.",
+        duration: 30, language: "nl", level: "A2", hospital: "ALL",
+        dept: "RECEPTIE", senderRole: "RECEPTIE", infoType: "LOGISTICS", channel: "QR",
+        moment: "DAYS_BEFORE", recipient: "PATIENT", vuln: "DAL", lane: "WELCOME",
+        tags: ["parkeren","route","ingang"]
+      },
+      {
+        id: "r2",
+        code: "ZH-REC-LOG-AANM-NL-A2-001",
+        title: "Aanmelden bij balie of aanmeldzuil",
+        text: "Meld u aan bij de receptie of bij een aanmeldzuil. Lukt het niet? Vraag gerust hulp. Dat is heel normaal.",
+        duration: 24, language: "nl", level: "A2", hospital: "ALL",
+        dept: "RECEPTIE", senderRole: "RECEPTIE", infoType: "LOGISTICS", channel: "QR",
+        moment: "DAY_OF", recipient: "PATIENT", vuln: "DAL", lane: "DAY",
+        tags: ["aanmelden","balie","zuil"]
+      },
+
+      // --- SCC / PHONE ---
+      {
+        id: "s1",
+        code: "ZH-SCC-PHN-BEREIK-NL-A2-001",
+        title: "Bel het Service Contact Centrum (SCC)",
+        text: "Heeft u een vraag over uw afspraak? Bel het Service Contact Centrum. Houd uw geboortedatum en eventueel uw patiëntnummer bij de hand.",
+        duration: 28, language: "nl", level: "A2", hospital: "ALL",
+        dept: "SCC", senderRole: "SCC", infoType: "PHONE", channel: "PHONE",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "DAL", lane: "CONTACT",
+        tags: ["telefoon","scc","bereikbaarheid"]
+      },
+      {
+        id: "s2",
+        code: "ZH-SCC-PHN-DRUK-NL-B1-001",
+        title: "Drukte aan de telefoon: wat kunt u doen?",
+        text: "Het kan druk zijn aan de telefoon. Probeer later opnieuw, of gebruik het portaal als dat kan. Als uw vraag spoed heeft, kies dan de spoedoptie.",
+        duration: 30, language: "nl", level: "B1", hospital: "ALL",
+        dept: "SCC", senderRole: "SCC", infoType: "PHONE", channel: "PHONE",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "REGULAR", lane: "CONTACT",
+        tags: ["drukte","wachttijd","alternatief"]
+      },
+
+      // --- APPOINTMENTS / NO-SHOW ---
+      {
+        id: "a1",
+        code: "ZH-POLI-APPT-ID-NL-A2-001",
+        title: "Wat moet u meenemen naar uw afspraak?",
+        text: "Neem een geldig identiteitsbewijs mee en een overzicht van uw medicijnen. Als u hulp nodig heeft, neem iemand mee.",
+        duration: 26, language: "nl", level: "A2", hospital: "ALL",
+        dept: "COMM", senderRole: "POLI", infoType: "APPOINTMENT", channel: "LETTER",
+        moment: "DAYS_BEFORE", recipient: "PATIENT", vuln: "DAL", lane: "APPT_PREP",
+        tags: ["id","medicatie","meenemen"]
+      },
+      {
+        id: "a2",
+        code: "ZH-SCC-APPT-AFZEG-NL-A2-001",
+        title: "Afspraak afzeggen of verplaatsen (no-show voorkomen)",
+        text: "Kunt u niet komen? Zeg uw afspraak zo vroeg mogelijk af. Bel het SCC of gebruik het portaal. Zo kunnen we iemand anders helpen.",
+        duration: 28, language: "nl", level: "A2", hospital: "ALL",
+        dept: "SCC", senderRole: "SCC", infoType: "APPOINTMENT", channel: "PHONE",
+        moment: "DAYS_BEFORE", recipient: "PATIENT", vuln: "DAL", lane: "CONTACT",
+        tags: ["afzeggen","no-show","verplaatsen"]
+      },
+      {
+        id: "a3",
+        code: "ZH-POLI-APPT-HERIN-NL-B1-001",
+        title: "Herinnering: uw afspraak komt eraan",
+        text: "Dit is een herinnering voor uw afspraak. Controleer de tijd en locatie. Kunt u niet komen? Meld het op tijd via SCC of portaal.",
+        duration: 24, language: "nl", level: "B1", hospital: "ALL",
+        dept: "COMM", senderRole: "POLI", infoType: "APPOINTMENT", channel: "SMS",
+        moment: "DAY_BEFORE", recipient: "PATIENT", vuln: "REGULAR", lane: "APPT_PREP",
+        tags: ["herinnering","sms"]
+      },
+
+      // --- MEDICAL: KNO ---
+      {
+        id: "k1",
+        code: "ZH-KNO-MED-INTRO-NL-B1-001",
+        title: "KNO: wat doen we op de polikliniek?",
+        text: "De KNO-arts kijkt naar klachten van oor, neus, keel en evenwicht. Vaak doen we onderzoek en bespreken we een behandelplan.",
+        duration: 34, language: "nl", level: "B1", hospital: "ALL",
+        dept: "KNO", senderRole: "POLI", infoType: "MEDICAL", channel: "PORTAL",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "REGULAR", lane: "MEDICAL",
+        tags: ["kno","uitleg","polikliniek"]
+      },
+      {
+        id: "k2",
+        code: "ZH-KNO-MED-VOORB-NL-A2-001",
+        title: "KNO: voorbereiding op uw eerste afspraak",
+        text: "Schrijf uw klachten op. Neem uw medicijnen mee. Als u hoort toestellen gebruikt, neem die mee. Zo kunnen we u beter helpen.",
+        duration: 28, language: "nl", level: "A2", hospital: "ALL",
+        dept: "KNO", senderRole: "POLI", infoType: "MEDICAL", channel: "LETTER",
+        moment: "DAYS_BEFORE", recipient: "PATIENT", vuln: "DAL", lane: "APPT_PREP",
+        tags: ["kno","voorbereiding"]
+      },
+
+      // --- MEDICAL: MDL ---
+      {
+        id: "m1",
+        code: "ZH-MDL-MED-INTRO-NL-B1-001",
+        title: "MDL: waar helpen we mee?",
+        text: "De MDL-afdeling helpt bij klachten van maag, darmen, lever en spijsvertering. We bespreken uw klachten, doen zo nodig onderzoek en maken een plan.",
+        duration: 36, language: "nl", level: "B1", hospital: "ALL",
+        dept: "MDL", senderRole: "POLI", infoType: "MEDICAL", channel: "PORTAL",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "REGULAR", lane: "MEDICAL",
+        tags: ["mdl","uitleg","plan"]
+      },
+      {
+        id: "m2",
+        code: "ZH-MDL-MED-VRAG-NL-A2-001",
+        title: "MDL: vragenlijst invullen",
+        text: "Voor uw MDL-afspraak vragen we u een korte vragenlijst in te vullen. Dit helpt ons om u sneller en beter te helpen.",
+        duration: 26, language: "nl", level: "A2", hospital: "ALL",
+        dept: "MDL", senderRole: "POLI", infoType: "MEDICAL", channel: "PORTAL",
+        moment: "DAYS_BEFORE", recipient: "PATIENT", vuln: "DAL", lane: "APPT_PREP",
+        tags: ["mdl","vragenlijst"]
+      },
+
+      // --- MEDICAL: GYN ---
+      {
+        id: "y1",
+        code: "ZH-GYN-MED-INTRO-NL-B1-001",
+        title: "Gynaecologie: wat kunt u verwachten?",
+        text: "De gynaecoloog helpt bij klachten rond baarmoeder, eierstokken en zwangerschap. We bespreken uw klachten en doen zo nodig onderzoek.",
+        duration: 34, language: "nl", level: "B1", hospital: "ALL",
+        dept: "GYN", senderRole: "POLI", infoType: "MEDICAL", channel: "PORTAL",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "REGULAR", lane: "MEDICAL",
+        tags: ["gynaecologie","uitleg"]
+      },
+      {
+        id: "y2",
+        code: "ZH-GYN-MED-PART-NL-A2-001",
+        title: "Gynaecologie: info voor partner/naaste",
+        text: "Uw partner of naaste kan helpen door mee te komen, mee te luisteren en vragen op te schrijven. Dat geeft rust en overzicht.",
+        duration: 26, language: "nl", level: "A2", hospital: "ALL",
+        dept: "GYN", senderRole: "POLI", infoType: "MEDICAL", channel: "PORTAL",
+        moment: "DAYS_BEFORE", recipient: "PARTNER", vuln: "DAL", lane: "FOLLOWUP",
+        tags: ["partner","steun"]
+      },
+
+      // --- FOLLOWUP / HELP ---
+      {
+        id: "f1",
+        code: "ZH-COMM-FOL-HELP-NL-A2-001",
+        title: "Hulp nodig? Vraag iemand om mee te helpen",
+        text: "Vindt u het lastig om te bellen of in te loggen? Vraag een partner, familielid of begeleider om mee te helpen. U hoeft het niet alleen te doen.",
+        duration: 26, language: "nl", level: "A2", hospital: "ALL",
+        dept: "COMM", senderRole: "COMM", infoType: "GENERAL", channel: "QR",
+        moment: "BOOKING", recipient: "PATIENT", vuln: "DAL", lane: "FOLLOWUP",
+        tags: ["hulp","kwetsbare groep"]
+      }
+    ];
+
+    const fragmentById = Object.fromEntries(fragments.map(f => [f.id, f]));
+
+    // ===== LANES (general) =====
+    const lanesConfig = [
+      { id: "lane-welcome", name: "Welkom & oriëntatie", lane: "WELCOME" },
+      { id: "lane-contact", name: "Contact & bereikbaarheid", lane: "CONTACT" },
+      { id: "lane-apptprep", name: "Afspraak & voorbereiding", lane: "APPT_PREP" },
+      { id: "lane-day", name: "Dag van bezoek/contact", lane: "DAY" },
+      { id: "lane-medical", name: "Medische uitleg", lane: "MEDICAL" },
+      { id: "lane-followup", name: "Vervolg & hulp", lane: "FOLLOWUP" }
+    ];
+
+    // ===== TEMPLATES (hospital-wide) =====
+    let templates = [
+      {
+        id: "tmpl-general-welcome",
+        name: "Algemeen: welkom + portaal + route",
+        lanes: {
+          "lane-welcome": ["g1","r1"],
+          "lane-contact": ["g2","s1"],
+          "lane-apptprep": ["a1","a3"],
+          "lane-day": ["r2"],
+          "lane-medical": [],
+          "lane-followup": ["f1"]
+        }
+      },
+      {
+        id: "tmpl-scc-phone",
+        name: "SCC: bellen + drukte + afspraak wijzigen",
+        lanes: {
+          "lane-welcome": [],
+          "lane-contact": ["s1","s2","a2"],
+          "lane-apptprep": ["a3"],
+          "lane-day": [],
+          "lane-medical": [],
+          "lane-followup": ["f1"]
+        }
+      },
+      {
+        id: "tmpl-kno-first",
+        name: "KNO: eerste afspraak (incl. logistiek & no-show)",
+        lanes: {
+          "lane-welcome": ["g1","r1"],
+          "lane-contact": ["s1","a2"],
+          "lane-apptprep": ["k2","a1","a3"],
+          "lane-day": ["r2"],
+          "lane-medical": ["k1"],
+          "lane-followup": ["f1"]
+        }
+      },
+      {
+        id: "tmpl-mdl-first",
+        name: "MDL: eerste afspraak (incl. vragenlijst)",
+        lanes: {
+          "lane-welcome": ["g1","r1"],
+          "lane-contact": ["s1","a2"],
+          "lane-apptprep": ["m2","a1","a3"],
+          "lane-day": ["r2"],
+          "lane-medical": ["m1"],
+          "lane-followup": ["f1"]
+        }
+      },
+      {
+        id: "tmpl-gyn-first",
+        name: "Gynaecologie: afspraak + partnerinfo",
+        lanes: {
+          "lane-welcome": ["g1","r1"],
+          "lane-contact": ["s1","a2"],
+          "lane-apptprep": ["a1","a3"],
+          "lane-day": ["r2"],
+          "lane-medical": ["y1"],
+          "lane-followup": ["y2","f1"]
+        }
+      }
+    ];
+
+    // ===== ELEMENTS =====
+    const fragmentListEl = document.getElementById("fragmentList");
+    const lanesEl = document.getElementById("lanes");
+    const durationSummaryEl = document.getElementById("durationSummary");
+    const timelineFillEl = document.getElementById("timelineFill");
+    const timelineLabelEl = document.getElementById("timelineLabel");
+    const detailBlockEl = document.getElementById("detailBlock");
+    const searchInputEl = document.getElementById("searchInput");
+
+    const btnResetFilters = document.getElementById("btn-reset-filters");
+    const btnGenerateTop = document.getElementById("btn-generate-top");
+    const btnGenerate = document.getElementById("btn-generate");
+    const btnExportJson = document.getElementById("btn-export-json");
+    const btnExportWord = document.getElementById("btn-export-word");
+    const btnNewStoryboard = document.getElementById("btn-new-storyboard");
+    const btnSaveTemplate = document.getElementById("btn-save-template");
+    const btnLoadTemplate = document.getElementById("btn-load-template");
+    const templateSelectEl = document.getElementById("templateSelect");
+    const btnPreviewTop = document.getElementById("btn-preview-top");
+    const btnPreview = document.getElementById("btn-preview");
+
+    const avatarSelectEl = document.getElementById("avatarSelect");
+    const backgroundSelectEl = document.getElementById("backgroundSelect");
+    const orientationSelectEl = document.getElementById("orientationSelect");
+    const languageSelectEl = document.getElementById("languageSelect");
+    const recipientSelectEl = document.getElementById("recipientSelect");
+    const hospitalSelectEl = document.getElementById("hospitalSelect");
+    const logoInputEl = document.getElementById("logoInput");
+
+    const filterHospitalEl = document.getElementById("filterHospital");
+    const filterDeptEl = document.getElementById("filterDept");
+    const filterSenderRoleEl = document.getElementById("filterSenderRole");
+    const filterInfoTypeEl = document.getElementById("filterInfoType");
+    const filterChannelEl = document.getElementById("filterChannel");
+    const filterMomentEl = document.getElementById("filterMoment");
+    const filterRecipientEl = document.getElementById("filterRecipient");
+    const filterLevelEl = document.getElementById("filterLevel");
+    const filterVulnEl = document.getElementById("filterVuln");
+    const filterLaneEl = document.getElementById("filterLane");
+
+    const previewOverlay = document.getElementById("previewOverlay");
+    const previewMeta = document.getElementById("previewMeta");
+    const previewText = document.getElementById("previewText");
+    const btnClosePreview = document.getElementById("btn-close-preview");
+    const btnCopyPreview = document.getElementById("btn-copy-preview");
+
+    let draggedCard = null;
+    let draggedFrom = null;
+
+    let activeFilters = {
+      hospital: "", dept: "", senderRole: "", infoType: "", channel: "",
+      moment: "", recipient: "", level: "", vuln: "", lane: ""
+    };
+
+    // ===== UI HELPERS =====
+    function escapeHtml(s) {
+      return (s || "")
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;");
+    }
+
+    function refreshTemplateSelect() {
+      templateSelectEl.innerHTML = '<option value="">Kies sjabloon…</option>';
+      templates.forEach(t => {
+        const opt = document.createElement("option");
+        opt.value = t.id;
+        opt.textContent = t.name;
+        templateSelectEl.appendChild(opt);
+      });
+    }
+
+    function createFragmentCard(frag) {
+      const card = document.createElement("div");
+      card.className = "fragment-card";
+      card.draggable = true;
+      card.dataset.fragmentId = frag.id;
+
+      const hospLabel = frag.hospital === "ALL" ? "Algemeen" : frag.hospital;
+
+      const removeBtn = document.createElement("button");
+      removeBtn.className = "remove-btn";
+      removeBtn.type = "button";
+      removeBtn.textContent = "×";
+      removeBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const parentLaneBody = card.closest(".lane-body");
+        if (parentLaneBody) {
+          parentLaneBody.removeChild(card);
+          updateLaneStats();
+          updateTotalDuration();
+        }
+      });
+
+      card.innerHTML = `
+        <div class="row-top">
+          <div class="avatar-pill">
+            <span class="icon">🎬</span>
+            <span>${frag.language.toUpperCase()} • ${frag.level}</span>
+          </div>
+          <span class="badge duration">${frag.duration}s</span>
+        </div>
+        <div class="title">${escapeHtml(frag.title)}</div>
+        <div class="snippet">${escapeHtml(frag.text)}</div>
+
+        <div class="meta-row">
+          <span class="badge hospital">${escapeHtml(hospLabel)}</span>
+          <span class="badge dept">${escapeHtml(frag.dept)}</span>
+          <span class="badge sender">${escapeHtml(senderRoleMap[frag.senderRole] || frag.senderRole)}</span>
+        </div>
+        <div class="meta-row">
+          <span class="badge type">${escapeHtml(infoTypeMap[frag.infoType] || frag.infoType)}</span>
+          <span class="badge channel">${escapeHtml(channelMap[frag.channel] || frag.channel)}</span>
+          <span class="badge timing">${escapeHtml(momentMap[frag.moment] || frag.moment)}</span>
+        </div>
+        <div class="meta-row">
+          <span class="badge recipient">${escapeHtml(recipientMap[frag.recipient] || frag.recipient)}</span>
+          <span class="badge">${escapeHtml(vulnMap[frag.vuln] || frag.vuln)}</span>
+        </div>
+        <div class="meta-row">
+          <span class="badge code">${escapeHtml(frag.code)}</span>
+        </div>
+      `;
+      card.appendChild(removeBtn);
+
+      card.addEventListener("click", (e) => {
+        if (e.target === removeBtn) return;
+        showFragmentDetails(frag);
+      });
+
+      card.addEventListener("dragstart", (e) => {
+        draggedCard = card;
+        draggedFrom = card.parentElement;
+        card.classList.add("dragging");
+        e.dataTransfer.effectAllowed = "move";
+      });
+
+      card.addEventListener("dragend", () => {
+        card.classList.remove("dragging");
+        draggedCard = null;
+        draggedFrom = null;
+      });
+
+      return card;
+    }
+
+    function matchesFilters(f, q) {
+      // hospital filter logic
+      if (activeFilters.hospital) {
+        if (activeFilters.hospital === "ALL") {
+          if (f.hospital !== "ALL") return false;
+        } else {
+          if (f.hospital !== activeFilters.hospital && f.hospital !== "ALL") return false;
+        }
+      }
+      if (activeFilters.dept && f.dept !== activeFilters.dept) return false;
+      if (activeFilters.senderRole && f.senderRole !== activeFilters.senderRole) return false;
+      if (activeFilters.infoType && f.infoType !== activeFilters.infoType) return false;
+      if (activeFilters.channel && f.channel !== activeFilters.channel) return false;
+      if (activeFilters.moment && f.moment !== activeFilters.moment) return false;
+      if (activeFilters.recipient && f.recipient !== activeFilters.recipient) return false;
+      if (activeFilters.level && f.level !== activeFilters.level) return false;
+      if (activeFilters.vuln && f.vuln !== activeFilters.vuln) return false;
+      if (activeFilters.lane && f.lane !== activeFilters.lane) return false;
+
+      if (!q) return true;
+      return (
+        f.title.toLowerCase().includes(q) ||
+        f.code.toLowerCase().includes(q) ||
+        (f.text && f.text.toLowerCase().includes(q))
+      );
+    }
+
+    function renderLibrary(filterText = "") {
+      fragmentListEl.innerHTML = "";
+      const q = filterText.trim().toLowerCase();
+
+      fragments
+        .filter(f => matchesFilters(f, q))
+        .forEach(f => fragmentListEl.appendChild(createFragmentCard(f)));
+    }
+
+    function initLanes() {
+      lanesEl.innerHTML = "";
+      lanesConfig.forEach(lc => {
+        const lane = document.createElement("div");
+        lane.className = "lane";
+        lane.dataset.laneId = lc.id;
+        lane.dataset.lane = lc.lane;
+
+        lane.innerHTML = `
+          <div class="lane-header">
+            <span class="name">${escapeHtml(lc.name)}</span>
+            <span class="badge">${escapeHtml(lc.lane)}</span>
+          </div>
+          <div class="lane-body empty" data-dropzone="true"></div>
+          <div class="lane-footer">
+            <span class="count">0 fragmenten</span>
+            <span class="time">0s</span>
+          </div>
+        `;
+
+        const body = lane.querySelector(".lane-body");
+
+        body.addEventListener("dragover", (e) => {
+          e.preventDefault();
+          body.classList.add("drag-over");
+          if (!draggedCard) return;
+          const afterElement = getDragAfterElement(body, e.clientY);
+          if (afterElement == null) body.appendChild(draggedCard);
+          else body.insertBefore(draggedCard, afterElement);
+        });
+
+        body.addEventListener("dragleave", (e) => {
+          if (!body.contains(e.relatedTarget)) body.classList.remove("drag-over");
+        });
+
+        body.addEventListener("drop", (e) => {
+          e.preventDefault();
+          body.classList.remove("drag-over");
+          if (!draggedCard) return;
+
+          if (draggedFrom && draggedFrom.classList.contains("lane-body") && draggedFrom.children.length === 0) {
+            draggedFrom.classList.add("empty");
+          }
+          body.classList.remove("empty");
+          updateLaneStats();
+          updateTotalDuration();
+        });
+
+        lanesEl.appendChild(lane);
+      });
+    }
+
+    function getDragAfterElement(container, y) {
+      const cards = [...container.querySelectorAll(".fragment-card:not(.dragging)")];
+      return cards.reduce(
+        (closest, child) => {
+          const box = child.getBoundingClientRect();
+          const offset = y - box.top - box.height / 2;
+          if (offset < 0 && offset > closest.offset) return { offset, element: child };
+          return closest;
+        },
+        { offset: Number.NEGATIVE_INFINITY, element: null }
+      ).element;
+    }
+
+    function showFragmentDetails(frag) {
+      detailBlockEl.innerHTML = `
+        <h3>${escapeHtml(frag.title)}</h3>
+        <p>${escapeHtml(frag.text)}</p>
+        <p><strong>Code:</strong> <code>${escapeHtml(frag.code)}</code></p>
+        <p><strong>Afdeling:</strong> ${escapeHtml(frag.dept)}</p>
+        <p><strong>Afzenderrol:</strong> ${escapeHtml(senderRoleMap[frag.senderRole] || frag.senderRole)}</p>
+        <p><strong>Type info:</strong> ${escapeHtml(infoTypeMap[frag.infoType] || frag.infoType)}</p>
+        <p><strong>Kanaal:</strong> ${escapeHtml(channelMap[frag.channel] || frag.channel)}</p>
+        <p><strong>Moment:</strong> ${escapeHtml(momentMap[frag.moment] || frag.moment)}</p>
+        <p><strong>Ontvanger:</strong> ${escapeHtml(recipientMap[frag.recipient] || frag.recipient)}</p>
+        <p><strong>Taal:</strong> ${escapeHtml(frag.language.toUpperCase())} • ${escapeHtml(frag.level)}</p>
+        <p><strong>Duur:</strong> ${frag.duration} seconden</p>
+        <p><strong>Kwetsbare groep:</strong> ${escapeHtml(vulnMap[frag.vuln] || frag.vuln)}</p>
+        <div class="pill-row">
+          <span class="pill">Lane: ${escapeHtml(frag.lane)}</span>
+          <span class="pill">Tags: ${escapeHtml((frag.tags || []).join(", "))}</span>
+        </div>
+      `;
+    }
+
+    function updateLaneStats() {
+      const laneEls = lanesEl.querySelectorAll(".lane");
+      laneEls.forEach(lane => {
+        const body = lane.querySelector(".lane-body");
+        const footerCount = lane.querySelector(".lane-footer .count");
+        const footerTime = lane.querySelector(".lane-footer .time");
+        const cards = body.querySelectorAll(".fragment-card");
+        if (cards.length === 0) body.classList.add("empty");
+        else body.classList.remove("empty");
+
+        let total = 0;
+        cards.forEach(card => {
+          const id = card.dataset.fragmentId;
+          total += fragmentById[id]?.duration || 0;
+        });
+        footerCount.textContent = `${cards.length} fragmenten`;
+        footerTime.textContent = `${total}s`;
+      });
+    }
+
+    function getStoryboardModel() {
+      const lanesModel = [];
+      const laneEls = lanesEl.querySelectorAll(".lane");
+      laneEls.forEach(lane => {
+        const body = lane.querySelector(".lane-body");
+        const cards = body.querySelectorAll(".fragment-card");
+        const items = [];
+        cards.forEach((card, idx) => {
+          const fId = card.dataset.fragmentId;
+          items.push({ order: idx + 1, fragmentId: fId, fragmentCode: fragmentById[fId].code });
+        });
+        lanesModel.push({ laneId: lane.dataset.laneId, lane: lane.dataset.lane, items });
+      });
+
+      return {
+        storyboardName: "Ziekenhuisbreed storyboard",
+        organization: orgInfo.organization,
+        userName: orgInfo.userName,
+        userEmail: orgInfo.email,
+        orgLogoFileName: orgInfo.logoFileName || "",
+        hospitalTheme: hospitalSelectEl.value,
+        avatar: avatarSelectEl.value,
+        background: backgroundSelectEl.value,
+        orientation: orientationSelectEl.value,
+        languageSetting: languageSelectEl.value,
+        recipientType: recipientSelectEl.value,
+        createdAt: new Date().toISOString(),
+        lanes: lanesModel
+      };
+    }
+
+    function updateTotalDuration() {
+      const model = getStoryboardModel();
+      let total = 0;
+      model.lanes.forEach(l => l.items.forEach(item => total += fragmentById[item.fragmentId]?.duration || 0));
+      durationSummaryEl.textContent = `Totale duur: ${total} sec`;
+      const minutes = Math.floor(total / 60);
+      const seconds = total % 60;
+      timelineLabelEl.textContent = `${minutes}:${seconds.toString().padStart(2, "0")}`;
+      const max = 4 * 60;
+      const pct = Math.min(total / max, 1);
+      timelineFillEl.style.inset = `0 ${(1 - pct) * 100}% 0 0`;
+    }
+
+    function handleGenerateClick() {
+      const model = getStoryboardModel();
+      if (!model.lanes.some(l => l.items.length > 0)) {
+        alert("Er staan nog geen fragmenten in het storyboard. Sleep eerst fragmenten naar de kolommen.");
+        return;
+      }
+      console.log("Storyboard payload (conceptueel):", model);
+      alert("Prototype: op basis van dit storyboard kan nu output worden gemaakt (video/tekst).\nBekijk de console (F12) voor de JSON payload.");
+    }
+
+    function handleExportJsonClick() {
+      const model = getStoryboardModel();
+      console.log("Storyboard JSON export:", model);
+      alert("Prototype: Storyboard JSON is naar de console geschreven (F12 → Console).");
+    }
+
+    function getStoryboardItemsInOrder() {
+      const ordered = [];
+      lanesConfig.forEach(lc => {
+        const lane = lanesEl.querySelector(`.lane[data-lane-id="${lc.id}"]`);
+        if (!lane) return;
+        const body = lane.querySelector(".lane-body");
+        const cards = body.querySelectorAll(".fragment-card");
+        cards.forEach(card => {
+          const id = card.dataset.fragmentId;
+          const frag = fragmentById[id];
+          if (frag) ordered.push(frag);
+        });
+      });
+      return ordered;
+    }
+
+    function getConcatenatedText() {
+      const orderedFrags = getStoryboardItemsInOrder();
+      return orderedFrags.map(f => f.text).join("\n\n");
+    }
+
+    function getOrderedCodes() {
+      const orderedFrags = getStoryboardItemsInOrder();
+      return orderedFrags.map(f => f.code);
+    }
+
+    function handleExportWordClick() {
+      const model = getStoryboardModel();
+      if (!model.lanes.some(l => l.items.length > 0)) {
+        alert("Er staan nog geen fragmenten in het storyboard. Voeg eerst fragmenten toe.");
+        return;
+      }
+
+      const orderedText = getConcatenatedText();
+      const orderedCodes = getOrderedCodes();
+
+      let html = `
+        <html xmlns:o='urn:schemas-microsoft-com:office:office'
+              xmlns:w='urn:schemas-microsoft-com:office:word'
+              xmlns='http://www.w3.org/TR/REC-html40'>
+        <head><meta charset="utf-8"><title>Ziekenhuisbreed storyboard</title></head><body>
+        <h1 style="font-family:Segoe UI, sans-serif;">Storyboard – ziekenhuisbrede communicatie (prototype)</h1>
+        <p><b>Organisatie:</b> ${escapeHtml(model.organization)}</p>
+        <p><b>Naam:</b> ${escapeHtml(model.userName)}</p>
+        <p><b>E-mail:</b> ${escapeHtml(model.userEmail)}</p>
+        <p><b>Aangemaakt op:</b> ${new Date(model.createdAt).toLocaleString("nl-NL")}</p>
+      `;
+
+      // REQUIRED ORDER
+      html += `
+        <hr/>
+        <h2 style="font-family:Segoe UI, sans-serif;">Samengevoegde tekst (in volgorde)</h2>
+        <p style="font-family:Segoe UI, sans-serif; font-size:11pt; line-height:1.45;">
+          ${escapeHtml(orderedText).replaceAll("\n", "<br/>")}
+        </p>
+
+        <h2 style="font-family:Segoe UI, sans-serif;">Fragmentcodes (in volgorde)</h2>
+        <ol style="font-family:Segoe UI, sans-serif; font-size:11pt;">
+          ${orderedCodes.map(c => `<li><code>${escapeHtml(c)}</code></li>`).join("")}
+        </ol>
+        <hr/>
+      `;
+
+      html += `
+        <h2 style="font-family:Segoe UI, sans-serif;">Output-instellingen</h2>
+        <ul>
+          <li><b>Ziekenhuisstijl:</b> ${escapeHtml(model.hospitalTheme)}</li>
+          <li><b>Avatar:</b> ${escapeHtml(model.avatar)}</li>
+          <li><b>Achtergrond:</b> ${escapeHtml(model.background)}</li>
+          <li><b>Videostand:</b> ${escapeHtml(model.orientation)}</li>
+          <li><b>Taalinstelling:</b> ${escapeHtml(model.languageSetting)}</li>
+          <li><b>Ontvanger:</b> ${escapeHtml(model.recipientType)}</li>
+          <li><b>Logo bestand:</b> ${escapeHtml(model.orgLogoFileName || "-")}</li>
+        </ul>
+
+        <h2 style="font-family:Segoe UI, sans-serif;">Fragmenten per kolom</h2>
+      `;
+
+      const laneLabel = {
+        WELCOME: "Welkom & oriëntatie",
+        CONTACT: "Contact & bereikbaarheid",
+        APPT_PREP: "Afspraak & voorbereiding",
+        DAY: "Dag van bezoek/contact",
+        MEDICAL: "Medische uitleg",
+        FOLLOWUP: "Vervolg & hulp"
+      };
+
+      model.lanes.forEach(lane => {
+        if (!lane.items.length) return;
+        html += `<h3 style="font-family:Segoe UI, sans-serif;">${escapeHtml(laneLabel[lane.lane] || lane.lane)}</h3>`;
+        html += `<table border="1" cellpadding="4" cellspacing="0" style="border-collapse:collapse;font-family:Segoe UI, sans-serif;font-size:11pt;width:100%;">`;
+        html += `
+          <tr style="background:#e5e7eb;">
+            <th>#</th>
+            <th>Titel</th>
+            <th>Code</th>
+            <th>Afdeling</th>
+            <th>Afzenderrol</th>
+            <th>Type info</th>
+            <th>Kanaal</th>
+            <th>Moment</th>
+            <th>Ontvanger</th>
+            <th>Taal</th>
+            <th>Duur (s)</th>
+          </tr>
+        `;
+        lane.items.forEach(item => {
+          const frag = fragmentById[item.fragmentId];
+          if (!frag) return;
+          html += `
+            <tr>
+              <td>${item.order}</td>
+              <td>${escapeHtml(frag.title)}</td>
+              <td>${escapeHtml(frag.code)}</td>
+              <td>${escapeHtml(frag.dept)}</td>
+              <td>${escapeHtml(senderRoleMap[frag.senderRole] || frag.senderRole)}</td>
+              <td>${escapeHtml(infoTypeMap[frag.infoType] || frag.infoType)}</td>
+              <td>${escapeHtml(channelMap[frag.channel] || frag.channel)}</td>
+              <td>${escapeHtml(momentMap[frag.moment] || frag.moment)}</td>
+              <td>${escapeHtml(recipientMap[frag.recipient] || frag.recipient)}</td>
+              <td>${escapeHtml(frag.language.toUpperCase() + " " + frag.level)}</td>
+              <td>${frag.duration}</td>
+            </tr>
+          `;
+        });
+        html += `</table><br/>`;
+      });
+
+      html += `</body></html>`;
+
+      const blob = new Blob(['\ufeff', html], { type: 'application/msword' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      const safeOrg = (model.organization || "demo").replace(/[^a-z0-9]+/gi, "_");
+      a.download = `Storyboard_Ziekenhuisbreed_${safeOrg}.doc`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function resetStoryboard() {
+      initLanes();
+      updateLaneStats();
+      updateTotalDuration();
+    }
+
+    function handleSaveTemplate() {
+      const model = getStoryboardModel();
+      if (!model.lanes.some(l => l.items.length > 0)) {
+        alert("Er staan nog geen fragmenten in het storyboard. Maak eerst een opzet voordat je een sjabloon opslaat.");
+        return;
+      }
+      const name = prompt("Naam voor dit sjabloon:");
+      if (!name) return;
+
+      const laneMap = {};
+      model.lanes.forEach(lane => laneMap[lane.laneId] = lane.items.map(it => it.fragmentId));
+
+      const id = "tmpl-" + Date.now();
+      templates.push({ id, name, lanes: laneMap });
+      refreshTemplateSelect();
+      templateSelectEl.value = id;
+      alert("Sjabloon opgeslagen.");
+    }
+
+    function handleLoadTemplate() {
+      const id = templateSelectEl.value;
+      if (!id) { alert("Kies eerst een sjabloon in de lijst."); return; }
+      const tmpl = templates.find(t => t.id === id);
+      if (!tmpl) { alert("Sjabloon niet gevonden."); return; }
+
+      initLanes();
+
+      for (const laneId in tmpl.lanes) {
+        const lane = lanesEl.querySelector(`.lane[data-lane-id="${laneId}"]`);
+        if (!lane) continue;
+        const body = lane.querySelector(".lane-body");
+        body.innerHTML = "";
+        const fragIds = tmpl.lanes[laneId];
+        fragIds.forEach(fid => {
+          const frag = fragmentById[fid];
+          if (!frag) return;
+          body.appendChild(createFragmentCard(frag));
+        });
+      }
+      updateLaneStats();
+      updateTotalDuration();
+    }
+
+    function openPreview() {
+      const orderedFrags = getStoryboardItemsInOrder();
+      if (!orderedFrags.length) {
+        alert("Er staan nog geen fragmenten in het storyboard. Voeg eerst fragmenten toe.");
+        return;
+      }
+      const model = getStoryboardModel();
+      previewMeta.textContent =
+        `Organisatie: ${model.organization} • Avatar: ${model.avatar} • Achtergrond: ${model.background} • ` +
+        `Stand: ${model.orientation} • Taal: ${model.languageSetting} • Ontvanger: ${model.recipientType}`;
+      previewText.value = getConcatenatedText();
+      previewOverlay.classList.add("show");
+      previewOverlay.setAttribute("aria-hidden", "false");
+    }
+
+    function closePreview() {
+      previewOverlay.classList.remove("show");
+      previewOverlay.setAttribute("aria-hidden", "true");
+    }
+
+    // ===== INIT =====
+    refreshTemplateSelect();
+    renderLibrary();
+    initLanes();
+    updateLaneStats();
+    updateTotalDuration();
+
+    // ===== EVENTS =====
+    searchInputEl.addEventListener("input", (e) => renderLibrary(e.target.value));
+
+    btnResetFilters.addEventListener("click", () => {
+      searchInputEl.value = "";
+      activeFilters = { hospital:"", dept:"", senderRole:"", infoType:"", channel:"", moment:"", recipient:"", level:"", vuln:"", lane:"" };
+
+      filterHospitalEl.value = "";
+      filterDeptEl.value = "";
+      filterSenderRoleEl.value = "";
+      filterInfoTypeEl.value = "";
+      filterChannelEl.value = "";
+      filterMomentEl.value = "";
+      filterRecipientEl.value = "";
+      filterLevelEl.value = "";
+      filterVulnEl.value = "";
+      filterLaneEl.value = "";
+
+      renderLibrary();
+    });
+
+    function wireFilter(el, key) {
+      el.addEventListener("change", () => { activeFilters[key] = el.value; renderLibrary(searchInputEl.value); });
+    }
+    wireFilter(filterHospitalEl, "hospital");
+    wireFilter(filterDeptEl, "dept");
+    wireFilter(filterSenderRoleEl, "senderRole");
+    wireFilter(filterInfoTypeEl, "infoType");
+    wireFilter(filterChannelEl, "channel");
+    wireFilter(filterMomentEl, "moment");
+    wireFilter(filterRecipientEl, "recipient");
+    wireFilter(filterLevelEl, "level");
+    wireFilter(filterVulnEl, "vuln");
+    wireFilter(filterLaneEl, "lane");
+
+    btnGenerateTop.addEventListener("click", handleGenerateClick);
+    btnGenerate.addEventListener("click", handleGenerateClick);
+    btnExportJson.addEventListener("click", handleExportJsonClick);
+    btnExportWord.addEventListener("click", handleExportWordClick);
+    btnNewStoryboard.addEventListener("click", resetStoryboard);
+    btnSaveTemplate.addEventListener("click", handleSaveTemplate);
+    btnLoadTemplate.addEventListener("click", handleLoadTemplate);
+
+    btnPreviewTop.addEventListener("click", openPreview);
+    btnPreview.addEventListener("click", openPreview);
+    btnClosePreview.addEventListener("click", closePreview);
+    previewOverlay.addEventListener("click", (e) => { if (e.target === previewOverlay) closePreview(); });
+
+    btnCopyPreview.addEventListener("click", async () => {
+      const txt = previewText.value || "";
+      try { await navigator.clipboard.writeText(txt); alert("Tekst gekopieerd naar klembord."); }
+      catch { alert("Kopiëren lukt niet automatisch in deze browser. Selecteer en kopieer handmatig."); }
+    });
+
+    hospitalSelectEl.addEventListener("change", () => { document.body.className = `theme-${hospitalSelectEl.value}`; });
+
+    logoInputEl.addEventListener("change", () => {
+      const file = logoInputEl.files && logoInputEl.files[0];
+      orgInfo.logoFileName = file ? file.name : "";
+    });
+  </script>
+</body>
+</html>
