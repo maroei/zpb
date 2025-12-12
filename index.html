@@ -6,6 +6,10 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
     :root {
+      --leftW: 380px;
+      --rightW: 360px;
+      --resizerW: 8px;
+      --mainGap: 10px;
       --bg: #f3f4f8;
       --bg-panel: #ffffff;
       --border: #dde3ee;
@@ -115,11 +119,25 @@
     .main {
       flex: 1;
       display: grid;
-      grid-template-columns: 340px minmax(0, 1.7fr) 360px;
-      gap: 10px;
+      grid-template-columns: var(--leftW) var(--resizerW) minmax(0, 1.7fr) var(--resizerW) var(--rightW);
+      gap: var(--mainGap);
       padding: 10px 10px 14px;
       overflow: hidden;
+      align-items: stretch;
     }
+
+    .resizer {
+      width: var(--resizerW);
+      border-radius: 999px;
+      background: rgba(148, 163, 184, 0.25);
+      border: 1px solid rgba(148, 163, 184, 0.45);
+      cursor: col-resize;
+      align-self: stretch;
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.55);
+      transition: background 0.12s, transform 0.12s;
+    }
+    .resizer:hover { background: rgba(37, 99, 235, 0.18); transform: scaleX(1.06); }
+    .resizer.dragging { background: rgba(37, 99, 235, 0.28); }
     .panel {
       background: rgba(255, 255, 255, 0.98);
       border-radius: var(--radius-lg);
@@ -162,6 +180,36 @@
       border: 1px solid var(--border); font-size: 12px; background: #f9fafb;
     }
     .template-row button { font-size: 11px; padding: 5px 10px; border-radius: 999px; }
+    .menu-row { display: flex; gap: 6px; align-items: center; margin-bottom: 10px; justify-content: space-between; }
+    .menu { position: relative; display: inline-flex; }
+    .menu-pop {
+      position: absolute; top: 36px; left: 0;
+      width: 240px;
+      background: rgba(255,255,255,0.98);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      box-shadow: 0 16px 40px rgba(15, 23, 42, 0.18);
+      padding: 6px;
+      display: none;
+      z-index: 5000;
+    }
+    .menu-pop.show { display: block; }
+    .menu-pop button {
+      width: 100%;
+      text-align: left;
+      font-size: 12px;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid transparent;
+      background: transparent;
+      cursor: pointer;
+      color: var(--text);
+      display: flex;
+      gap: 8px;
+      align-items: center;
+    }
+    .menu-pop button:hover { background: #eef2ff; border-color: #e0e7ff; }
+    .menu-pop .sep { height: 1px; background: var(--border); margin: 6px 4px; }
 
     .dropdown-group {
       display: grid; grid-template-columns: 1fr 1fr;
@@ -431,6 +479,23 @@
             <button class="btn-secondary" id="btn-load-template">Laad</button>
           </div>
 
+          <div class="menu-row">
+            <div class="menu">
+              <button class="btn-secondary" id="btn-files-menu" type="button">Bestanden ▾</button>
+              <div class="menu-pop" id="filesMenuPop">
+                <button type="button" id="btn-download-templates">⬇️ Download sjablonen (JSON)</button>
+                <button type="button" id="btn-upload-templates">⬆️ Upload sjablonen (JSON)</button>
+                <div class="sep"></div>
+                <button type="button" id="btn-download-fragments">⬇️ Download fragmenten (JSON)</button>
+                <button type="button" id="btn-upload-fragments">⬆️ Upload fragmenten (JSON)</button>
+              </div>
+            </div>
+            <span class="chip" title="Deze functies werken lokaal in je browser (prototype).">Lokaal opslaan</span>
+          </div>
+
+          <input class="hidden" type="file" id="fileUploadTemplates" accept="application/json,.json" />
+          <input class="hidden" type="file" id="fileUploadFragments" accept="application/json,.json" />
+
           <div class="dropdown-group">
             <div>
               <label for="filterHospital">Ziekenhuis</label>
@@ -555,6 +620,8 @@
         </div>
       </section>
 
+      <div class="resizer" id="resizeLeft" title="Sleep om kolombreedte aan te passen"></div>
+
       <!-- MIDDLE: STORYBOARD -->
       <section class="panel">
         <div class="panel-header">
@@ -570,6 +637,8 @@
           </div>
         </div>
       </section>
+
+      <div class="resizer" id="resizeRight" title="Sleep om kolombreedte aan te passen"></div>
 
       <!-- RIGHT: SETTINGS & DETAILS -->
       <section class="panel">
@@ -737,7 +806,7 @@
     // Fields:
     // id, code, title, text, duration, language, level, hospital,
     // dept, senderRole, infoType, channel, moment, recipient, vuln, lane, tags
-    const fragments = [
+    const defaultFragments = [
       // --- GENERAL HOSPITAL / COMM ---
       {
         id: "g1",
@@ -915,7 +984,13 @@
       }
     ];
 
-    const fragmentById = Object.fromEntries(fragments.map(f => [f.id, f]));
+    let fragments = [...defaultFragments];
+
+    let fragmentById = {};
+    function rebuildFragmentIndex() {
+      fragmentById = Object.fromEntries(fragments.map(f => [f.id, f]));
+    }
+    rebuildFragmentIndex();
 
     // ===== LANES (general) =====
     const lanesConfig = [
@@ -928,7 +1003,7 @@
     ];
 
     // ===== TEMPLATES (hospital-wide) =====
-    let templates = [
+    const defaultTemplates = [
       {
         id: "tmpl-general-welcome",
         name: "Algemeen: welkom + portaal + route",
@@ -991,6 +1066,8 @@
       }
     ];
 
+    let templates = [...defaultTemplates];
+
     // ===== ELEMENTS =====
     const fragmentListEl = document.getElementById("fragmentList");
     const lanesEl = document.getElementById("lanes");
@@ -1044,6 +1121,253 @@
       hospital: "", dept: "", senderRole: "", infoType: "", channel: "",
       moment: "", recipient: "", level: "", vuln: "", lane: ""
     };
+
+    // ===== PERSISTENCE (prototype - browser localStorage) =====
+    const LS_KEYS = {
+      templates: "is_templates_v1",
+      fragments: "is_fragments_v1",
+      layout: "is_layout_v1"
+    };
+
+    function safeJsonParse(s) {
+      try { return JSON.parse(s); } catch { return null; }
+    }
+
+    function loadPersistedData() {
+      const storedTemplates = safeJsonParse(localStorage.getItem(LS_KEYS.templates) || "");
+      if (Array.isArray(storedTemplates) && storedTemplates.length) {
+        // merge by id
+        const byId = new Map(templates.map(t => [t.id, t]));
+        storedTemplates.forEach(t => { if (t && t.id && t.name && t.lanes) byId.set(t.id, t); });
+        templates = [...byId.values()];
+      }
+
+      const storedFragments = safeJsonParse(localStorage.getItem(LS_KEYS.fragments) || "");
+      if (Array.isArray(storedFragments) && storedFragments.length) {
+        const byId = new Map(fragments.map(f => [f.id, f]));
+        storedFragments.forEach(f => { if (f && f.id && f.code && f.title && f.text) byId.set(f.id, f); });
+        fragments = [...byId.values()];
+        rebuildFragmentIndex();
+      }
+
+      const layout = safeJsonParse(localStorage.getItem(LS_KEYS.layout) || "");
+      if (layout && layout.leftW && layout.rightW) {
+        document.documentElement.style.setProperty("--leftW", layout.leftW);
+        document.documentElement.style.setProperty("--rightW", layout.rightW);
+      }
+    }
+
+    function persistTemplates() {
+      localStorage.setItem(LS_KEYS.templates, JSON.stringify(templates));
+    }
+
+    function persistFragments() {
+      localStorage.setItem(LS_KEYS.fragments, JSON.stringify(fragments));
+    }
+
+    function persistLayout(leftW, rightW) {
+      localStorage.setItem(LS_KEYS.layout, JSON.stringify({ leftW, rightW }));
+    }
+
+    function downloadJson(filename, data) {
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    function normalizeTemplatesPayload(payload) {
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.templates)) return payload.templates;
+      return null;
+    }
+
+    function normalizeFragmentsPayload(payload) {
+      if (Array.isArray(payload)) return payload;
+      if (payload && Array.isArray(payload.fragments)) return payload.fragments;
+      return null;
+    }
+
+    function validateTemplate(t) {
+      if (!t || typeof t !== "object") return false;
+      if (!t.id || !t.name || !t.lanes) return false;
+      return true;
+    }
+
+    function validateFragment(f) {
+      // minimal required for this prototype
+      const required = ["id","code","title","text","duration","language","level","hospital","dept","senderRole","infoType","channel","moment","recipient","vuln","lane","tags"];
+      if (!f || typeof f !== "object") return false;
+      for (const k of required) if (f[k] === undefined || f[k] === null) return false;
+      return true;
+    }
+
+    // ===== RESIZABLE COLUMNS =====
+    const resizeLeftEl = document.getElementById("resizeLeft");
+    const resizeRightEl = document.getElementById("resizeRight");
+    const mainGridEl = document.querySelector(".main");
+
+    function px(n) { return Math.round(n) + "px"; }
+    function clamp(v, min, max) { return Math.max(min, Math.min(max, v)); }
+
+    function getCssPxVar(name, fallbackPx) {
+      const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+      if (!v) return fallbackPx;
+      const m = v.match(/([0-9.]+)px/);
+      return m ? parseFloat(m[1]) : fallbackPx;
+    }
+
+    function initResizer(handleEl, side) {
+      if (!handleEl) return;
+
+      let startX = 0;
+      let startLeft = 0;
+      let startRight = 0;
+
+      const onMove = (e) => {
+        const dx = e.clientX - startX;
+
+        const minLeft = 300, maxLeft = 620;
+        const minRight = 300, maxRight = 620;
+
+        if (side === "left") {
+          const nextLeft = clamp(startLeft + dx, minLeft, maxLeft);
+          document.documentElement.style.setProperty("--leftW", px(nextLeft));
+          persistLayout(px(nextLeft), px(getCssPxVar("--rightW", startRight)));
+        } else {
+          const nextRight = clamp(startRight - dx, minRight, maxRight);
+          document.documentElement.style.setProperty("--rightW", px(nextRight));
+          persistLayout(px(getCssPxVar("--leftW", startLeft)), px(nextRight));
+        }
+      };
+
+      const onUp = () => {
+        handleEl.classList.remove("dragging");
+        window.removeEventListener("mousemove", onMove);
+        window.removeEventListener("mouseup", onUp);
+      };
+
+      handleEl.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        startX = e.clientX;
+        startLeft = getCssPxVar("--leftW", 380);
+        startRight = getCssPxVar("--rightW", 360);
+        handleEl.classList.add("dragging");
+        window.addEventListener("mousemove", onMove);
+        window.addEventListener("mouseup", onUp);
+      });
+    }
+
+    initResizer(resizeLeftEl, "left");
+    initResizer(resizeRightEl, "right");
+
+    // ===== FILE MENU (upload/download templates/fragments) =====
+    const btnFilesMenu = document.getElementById("btn-files-menu");
+    const filesMenuPop = document.getElementById("filesMenuPop");
+    const btnDownloadTemplates = document.getElementById("btn-download-templates");
+    const btnUploadTemplates = document.getElementById("btn-upload-templates");
+    const btnDownloadFragments = document.getElementById("btn-download-fragments");
+    const btnUploadFragments = document.getElementById("btn-upload-fragments");
+    const fileUploadTemplates = document.getElementById("fileUploadTemplates");
+    const fileUploadFragments = document.getElementById("fileUploadFragments");
+
+    function closeFilesMenu() { filesMenuPop.classList.remove("show"); }
+    function toggleFilesMenu() { filesMenuPop.classList.toggle("show"); }
+
+    btnFilesMenu.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleFilesMenu();
+    });
+
+    window.addEventListener("click", () => closeFilesMenu());
+
+    btnDownloadTemplates.addEventListener("click", () => {
+      closeFilesMenu();
+      downloadJson("InforiumStudio_Sjablonen.json", {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        templates
+      });
+    });
+
+    btnDownloadFragments.addEventListener("click", () => {
+      closeFilesMenu();
+      downloadJson("InforiumStudio_Fragmenten.json", {
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        fragments
+      });
+    });
+
+    btnUploadTemplates.addEventListener("click", () => {
+      closeFilesMenu();
+      fileUploadTemplates.value = "";
+      fileUploadTemplates.click();
+    });
+
+    btnUploadFragments.addEventListener("click", () => {
+      closeFilesMenu();
+      fileUploadFragments.value = "";
+      fileUploadFragments.click();
+    });
+
+    fileUploadTemplates.addEventListener("change", async () => {
+      const file = fileUploadTemplates.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const payload = safeJsonParse(text);
+        const incoming = normalizeTemplatesPayload(payload);
+        if (!incoming) throw new Error("Geen geldige templates gevonden.");
+        const valid = incoming.filter(validateTemplate);
+        if (!valid.length) throw new Error("Geen geldige sjablonen (id, name, lanes) gevonden.");
+
+        const byId = new Map(templates.map(t => [t.id, t]));
+        valid.forEach(t => byId.set(t.id, t));
+        templates = [...byId.values()];
+        persistTemplates();
+        refreshTemplateSelect();
+        alert(`Sjablonen geïmporteerd: ${valid.length}.`);
+      } catch (err) {
+        alert("Import mislukt: " + (err?.message || err));
+      }
+    });
+
+    fileUploadFragments.addEventListener("change", async () => {
+      const file = fileUploadFragments.files?.[0];
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const payload = safeJsonParse(text);
+        const incoming = normalizeFragmentsPayload(payload);
+        if (!incoming) throw new Error("Geen geldige fragmenten gevonden.");
+        const valid = incoming.filter(validateFragment);
+        if (!valid.length) throw new Error("Geen geldige fragmenten gevonden (mist verplichte velden).");
+
+        const byId = new Map(fragments.map(f => [f.id, f]));
+        valid.forEach(f => {
+          // if id collides, make a new one
+          let id = f.id;
+          if (byId.has(id)) id = "imp-" + Date.now() + "-" + Math.floor(Math.random()*1000);
+          byId.set(id, { ...f, id });
+        });
+
+        fragments = [...byId.values()];
+        rebuildFragmentIndex();
+        persistFragments();
+        renderLibrary(searchInputEl.value || "");
+        alert(`Fragmenten geïmporteerd: ${valid.length}.`);
+      } catch (err) {
+        alert("Import mislukt: " + (err?.message || err));
+      }
+    });
+
+
 
     // ===== UI HELPERS =====
     function escapeHtml(s) {
@@ -1501,6 +1825,7 @@
 
       const id = "tmpl-" + Date.now();
       templates.push({ id, name, lanes: laneMap });
+      persistTemplates();
       refreshTemplateSelect();
       templateSelectEl.value = id;
       alert("Sjabloon opgeslagen.");
@@ -1551,8 +1876,9 @@
     }
 
     // ===== INIT =====
+    loadPersistedData();
     refreshTemplateSelect();
-    renderLibrary();
+    renderLibrary(searchInputEl.value || "");
     initLanes();
     updateLaneStats();
     updateTotalDuration();
