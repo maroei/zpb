@@ -391,6 +391,52 @@
       background: #f9fafb; font-size: 13px; line-height: 1.45; white-space: pre-wrap;
     }
     .modal-actions { display: flex; gap: 8px; align-items: center; }
+      /* MENU (dropdown) */
+    .menu-wrap { position: relative; display: inline-flex; }
+    .menu { position: absolute; right: 0; top: calc(100% + 6px); min-width: 240px;
+      background: rgba(255,255,255,0.98); border: 1px solid var(--border);
+      border-radius: 12px; box-shadow: var(--shadow-soft); padding: 6px; display: none; z-index: 50; }
+    .menu.open { display: block; }
+    .menu-item { width: 100%; text-align: left; border: none; background: transparent; padding: 10px 10px;
+      border-radius: 10px; cursor: pointer; font-weight: 800; color: var(--text); }
+    .menu-item:hover { background: var(--accent-soft); }
+    .menu-sep { height: 1px; background: var(--border); margin: 6px 4px; }
+    .hidden { display: none !important; }
+
+    /* LIBRARY MANAGER MODAL */
+    #libOverlay { position: fixed; inset: 0; background: rgba(15,23,42,.55); display: none;
+      align-items: center; justify-content: center; padding: 16px; z-index: 9999; }
+    #libOverlay.show { display: flex; }
+    .lib-modal { width: min(1200px, 98vw); max-height: 90vh; overflow: hidden;
+      background: rgba(255,255,255,0.98); border: 1px solid rgba(148,163,184,.6);
+      border-radius: 18px; box-shadow: 0 18px 60px rgba(15,23,42,.35); display: flex; flex-direction: column; }
+    .lib-header { padding: 10px 12px; border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+    .lib-header h3 { margin: 0; font-size: 14px; font-weight: 900; }
+    .lib-tabs { display: flex; gap: 6px; }
+    .tab { border: 1px solid var(--border); background: #fff; padding: 7px 12px;
+      border-radius: var(--radius-pill); cursor: pointer; font-weight: 900; font-size: 12px; }
+    .tab.active { background: linear-gradient(135deg, var(--accent), var(--accent-strong)); color: #fff; border-color: transparent; }
+    .lib-body { display: grid; grid-template-columns: 360px minmax(0, 1fr); gap: 10px; padding: 10px; overflow: hidden; flex: 1; }
+    .lib-list { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: hidden; display: flex; flex-direction: column; min-height: 0; }
+    .lib-list .top { padding: 10px; border-bottom: 1px solid var(--border); display: flex; gap: 8px; align-items: center; }
+    .lib-list input { flex: 1; padding: 8px 10px; border-radius: var(--radius-pill); border: 1px solid var(--border); background: #f9fafb; font-size: 13px; }
+    .lib-list .items { padding: 10px; overflow: auto; flex: 1; display: flex; flex-direction: column; gap: 8px; }
+    .lib-item { border: 1px solid var(--border); border-radius: 12px; background: #fff; padding: 8px 10px; cursor: pointer; }
+    .lib-item:hover { background: #f8fafc; }
+    .lib-item.active { outline: 2px solid rgba(37,99,235,.35); background: #f3f7ff; }
+    .lib-item .name { font-weight: 900; font-size: 12px; }
+    .lib-item .meta { font-size: 11px; color: var(--muted); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+
+    .lib-editor { background: #fff; border: 1px solid var(--border); border-radius: 14px; overflow: auto; padding: 12px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+    .field label { display: block; font-size: 11px; font-weight: 900; color: var(--muted); margin-bottom: 4px; }
+    .field input, .field select, .field textarea { width: 100%; padding: 8px 10px; border-radius: 12px; border: 1px solid var(--border); background: #f9fafb; font-size: 12px; }
+    .field textarea { min-height: 140px; resize: vertical; line-height: 1.45; }
+    .span2 { grid-column: 1 / -1; }
+    .lib-actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .note { font-size: 11px; color: var(--muted); margin-top: 6px; }
+
   </style>
 </head>
 
@@ -477,6 +523,22 @@
               <option value="">Kies sjabloon…</option>
             </select>
             <button class="btn-secondary" id="btn-load-template">Laad</button>
+
+            <div class="menu-wrap" id="libMenuWrap">
+              <button class="btn-secondary" id="btn-lib-menu" title="Beheer fragmenten en sjablonen">Bibliotheek ▾</button>
+              <div class="menu" id="libMenu">
+                <button type="button" class="menu-item" id="mi-manage-frags">Fragmenten beheren</button>
+                <button type="button" class="menu-item" id="mi-manage-templates">Sjablonen beheren</button>
+                <div class="menu-sep"></div>
+                <button type="button" class="menu-item" id="mi-export-frags">Download fragmenten (JSON)</button>
+                <button type="button" class="menu-item" id="mi-import-frags">Upload fragmenten (JSON)</button>
+                <button type="button" class="menu-item" id="mi-export-templates">Download sjablonen (JSON)</button>
+                <button type="button" class="menu-item" id="mi-import-templates">Upload sjablonen (JSON)</button>
+              </div>
+            </div>
+            <input type="file" id="fileImportFragments" accept="application/json" class="hidden" />
+            <input type="file" id="fileImportTemplates" accept="application/json" class="hidden" />
+
           </div>
 
           <div class="menu-row">
@@ -751,6 +813,126 @@
     </div>
   </div>
 
+  <!-- LIBRARY MANAGER MODAL -->
+  <div id="libOverlay" aria-hidden="true">
+    <div class="lib-modal" role="dialog" aria-modal="true" aria-labelledby="libTitle">
+      <div class="lib-header">
+        <div class="row" style="gap:10px;align-items:center;">
+          <h3 id="libTitle">Bibliotheek beheren</h3>
+          <span style="font-size:12px;color:var(--muted)">Maak/bewerk fragmenten en sjablonen (lokaal in dit prototype)</span>
+        </div>
+        <div class="row" style="gap:8px;align-items:center;">
+          <div class="lib-tabs">
+            <button class="tab active" id="tabFragments" type="button">Fragmenten</button>
+            <button class="tab" id="tabTemplates" type="button">Sjablonen</button>
+          </div>
+          <button class="btn-secondary" id="btnCloseLib" type="button">Sluiten</button>
+        </div>
+      </div>
+
+      <div class="lib-body">
+        <div class="lib-list">
+          <div class="top">
+            <input id="libSearch" placeholder="Zoek…" />
+            <button class="btn-secondary" id="btnLibNew" type="button">Nieuw</button>
+          </div>
+          <div class="items" id="libItems"></div>
+        </div>
+
+        <div class="lib-editor">
+          <div id="fragEditor">
+            <div class="form-grid">
+              <div class="field"><label>Fragment ID</label><input id="f_id" placeholder="(automatisch)" /></div>
+              <div class="field"><label>Fragmentcode</label><input id="f_code" placeholder="Bijv. ZH-MDL-LOG-ROUTE-NL-A2-001" /></div>
+
+              <div class="field span2"><label>Titel</label><input id="f_title" placeholder="Korte titel" /></div>
+              <div class="field span2"><label>Gevalideerde tekst</label><textarea id="f_text" placeholder="Spreektekst…"></textarea></div>
+
+              <div class="field"><label>Duur (sec)</label><input id="f_duration" type="number" min="0" step="1" /></div>
+              <div class="field"><label>Taal</label>
+                <select id="f_language"><option value="nl">NL</option><option value="en">EN</option><option value="de">DE</option><option value="fr">FR</option></select>
+              </div>
+
+              <div class="field"><label>Taalniveau</label>
+                <select id="f_level"><option value="A2">A2</option><option value="B1">B1</option><option value="NORMAL">Normaal</option></select>
+              </div>
+              <div class="field"><label>Licentie</label>
+                <select id="f_license"><option value="CC-BY-4.0">CC BY 4.0</option><option value="CC0">CC0</option></select>
+              </div>
+
+              <div class="field"><label>Ziekenhuis</label>
+                <select id="f_hospital"><option value="ALL">Algemeen</option><option value="AMSTELLAND">Amstelland</option><option value="WZA">WZA Assen</option><option value="SLINGELAND">Slingeland</option></select>
+              </div>
+              <div class="field"><label>Afdeling</label>
+                <select id="f_dept"><option value="COMM">Communicatie</option><option value="RECEPTIE">Receptie</option><option value="SCC">SCC</option><option value="KNO">KNO</option><option value="MDL">MDL</option><option value="GYN">GYN</option></select>
+              </div>
+
+              <div class="field"><label>Afzenderrol</label>
+                <select id="f_senderRole"><option value="POLI">Poli</option><option value="RECEPTIE">Receptie</option><option value="COMM">Communicatie</option><option value="SCC">SCC</option></select>
+              </div>
+              <div class="field"><label>Type info</label>
+                <select id="f_infoType"><option value="GENERAL">Algemeen</option><option value="APPOINTMENT">Afspraken/no-show</option><option value="PHONE">Telefonie</option><option value="LOGISTICS">Logistiek</option><option value="MEDICAL">Medisch</option></select>
+              </div>
+
+              <div class="field"><label>Kanaal</label>
+                <select id="f_channel"><option value="PORTAL">Portaal</option><option value="LETTER">Brief</option><option value="EMAIL">E-mail</option><option value="SMS">SMS</option><option value="PHONE">Telefoon</option><option value="QR">QR</option></select>
+              </div>
+              <div class="field"><label>Moment</label>
+                <select id="f_moment"><option value="BOOKING">Bij bevestiging</option><option value="DAYS_BEFORE">Dagen vóór</option><option value="DAY_BEFORE">Dag vóór</option><option value="DAY_OF">Dag van</option><option value="AFTER">Na</option></select>
+              </div>
+
+              <div class="field"><label>Ontvanger</label>
+                <select id="f_recipient"><option value="PATIENT">Patiënt</option><option value="PARTNER">Partner</option><option value="CAREGIVER">Begeleider</option></select>
+              </div>
+              <div class="field"><label>Kwetsbaar</label>
+                <select id="f_vuln"><option value="REGULAR">Regulier</option><option value="DAL">DAL</option><option value="MIGRANT">Anderstalig</option></select>
+              </div>
+
+              <div class="field"><label>Storyboardkolom</label>
+                <select id="f_lane"><option value="WELCOME">Welkom</option><option value="CONTACT">Contact</option><option value="APPT_PREP">Afspraak/voorbereiding</option><option value="DAY">Dag van</option><option value="MEDICAL">Medisch</option><option value="FOLLOWUP">Vervolg</option></select>
+              </div>
+              <div class="field"><label>Tags (komma-gescheiden)</label><input id="f_tags" placeholder="bv. route, ID, portaal" /></div>
+            </div>
+
+            <div class="lib-actions">
+              <button class="btn-primary" id="btnFragSave" type="button">Opslaan</button>
+              <button class="btn-secondary" id="btnFragDup" type="button">Dupliceer</button>
+              <button class="btn-secondary" id="btnFragDelete" type="button">Verwijder</button>
+              <button class="btn-secondary" id="btnFragExportOne" type="button">Download dit fragment (JSON)</button>
+            </div>
+            <div class="note">Opslaan past de bibliotheek aan + werkt meteen in de fragmentlijst. (Prototype: alles lokaal)</div>
+          </div>
+
+          <div id="tmplEditor" class="hidden">
+            <div class="form-grid">
+              <div class="field span2"><label>Sjabloonnaam</label><input id="t_name" placeholder="Naam van sjabloon" /></div>
+              <div class="field"><label>Sjabloon ID</label><input id="t_id" placeholder="(automatisch)" /></div>
+              <div class="field"><label>Opslaan-modus</label>
+                <select id="t_mode"><option value="update">Overschrijf geselecteerd sjabloon</option><option value="new">Opslaan als nieuw sjabloon</option></select>
+              </div>
+
+              <div class="field span2"><label>Inhoud (fragment-ID's per kolom)</label>
+                <textarea id="t_json" placeholder='{"lane-welcome":["g1","r1"], ... }'></textarea>
+              </div>
+            </div>
+
+            <div class="lib-actions">
+              <button class="btn-primary" id="btnTmplSave" type="button">Opslaan</button>
+              <button class="btn-secondary" id="btnTmplLoadToBoard" type="button">Laad in storyboard</button>
+              <button class="btn-secondary" id="btnTmplDelete" type="button">Verwijder</button>
+              <button class="btn-secondary" id="btnTmplExportOne" type="button">Download dit sjabloon (JSON)</button>
+              <button class="btn-secondary" id="btnTmplFromBoard" type="button">Vul met huidig storyboard</button>
+            </div>
+            <div class="note">Tip: laad een sjabloon → pas storyboard aan → “Vul met huidig storyboard” → Opslaan.</div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
   <script>
     // ===== ORG INFO =====
     const introScreen = document.getElementById("introScreen");
@@ -985,12 +1167,18 @@
     ];
 
     let fragments = [...defaultFragments];
+    try{const raw=localStorage.getItem('IS_FRAGS_V3'); if(raw){ const p=JSON.parse(raw); if(Array.isArray(p)) fragments=p; else if(p && Array.isArray(p.fragments)) fragments=p.fragments; }}catch(e){}
+
 
     let fragmentById = {};
     function rebuildFragmentIndex() {
       fragmentById = Object.fromEntries(fragments.map(f => [f.id, f]));
     }
     rebuildFragmentIndex();
+
+    function saveFragments(){ try{ localStorage.setItem('IS_FRAGS_V3', JSON.stringify(fragments)); }catch(e){} }
+    function saveTemplates(){ try{ localStorage.setItem('IS_TEMPL_V3', JSON.stringify(templates)); }catch(e){} }
+
 
     // ===== LANES (general) =====
     const lanesConfig = [
@@ -1067,6 +1255,8 @@
     ];
 
     let templates = [...defaultTemplates];
+    try{const raw=localStorage.getItem('IS_TEMPL_V3'); if(raw){ const p=JSON.parse(raw); if(Array.isArray(p)) templates=p; else if(p && Array.isArray(p.templates)) templates=p.templates; }}catch(e){}
+
 
     // ===== ELEMENTS =====
     const fragmentListEl = document.getElementById("fragmentList");
@@ -1121,6 +1311,429 @@
       hospital: "", dept: "", senderRole: "", infoType: "", channel: "",
       moment: "", recipient: "", level: "", vuln: "", lane: ""
     };
+
+    // ===== LIBRARY MENU + MANAGER =====
+
+    const libMenuWrap = document.getElementById("libMenuWrap");
+    const btnLibMenu = document.getElementById("btn-lib-menu");
+    const libMenu = document.getElementById("libMenu");
+    const fileImportFragmentsEl = document.getElementById("fileImportFragments");
+    const fileImportTemplatesEl = document.getElementById("fileImportTemplates");
+
+    const miManageFrags = document.getElementById("mi-manage-frags");
+    const miManageTemplates = document.getElementById("mi-manage-templates");
+    const miExportFrags = document.getElementById("mi-export-frags");
+    const miImportFrags = document.getElementById("mi-import-frags");
+    const miExportTemplates = document.getElementById("mi-export-templates");
+    const miImportTemplates = document.getElementById("mi-import-templates");
+
+    const libOverlay = document.getElementById("libOverlay");
+    const btnCloseLib = document.getElementById("btnCloseLib");
+    const tabFragments = document.getElementById("tabFragments");
+    const tabTemplates = document.getElementById("tabTemplates");
+    const libSearch = document.getElementById("libSearch");
+    const libItems = document.getElementById("libItems");
+    const btnLibNew = document.getElementById("btnLibNew");
+    const fragEditor = document.getElementById("fragEditor");
+    const tmplEditor = document.getElementById("tmplEditor");
+
+    // Fragment fields
+    const f_id = document.getElementById("f_id");
+    const f_code = document.getElementById("f_code");
+    const f_title = document.getElementById("f_title");
+    const f_text = document.getElementById("f_text");
+    const f_duration = document.getElementById("f_duration");
+    const f_language = document.getElementById("f_language");
+    const f_level = document.getElementById("f_level");
+    const f_license = document.getElementById("f_license");
+    const f_hospital = document.getElementById("f_hospital");
+    const f_dept = document.getElementById("f_dept");
+    const f_senderRole = document.getElementById("f_senderRole");
+    const f_infoType = document.getElementById("f_infoType");
+    const f_channel = document.getElementById("f_channel");
+    const f_moment = document.getElementById("f_moment");
+    const f_recipient = document.getElementById("f_recipient");
+    const f_vuln = document.getElementById("f_vuln");
+    const f_lane = document.getElementById("f_lane");
+    const f_tags = document.getElementById("f_tags");
+
+    const btnFragSave = document.getElementById("btnFragSave");
+    const btnFragDup = document.getElementById("btnFragDup");
+    const btnFragDelete = document.getElementById("btnFragDelete");
+    const btnFragExportOne = document.getElementById("btnFragExportOne");
+
+    // Template fields
+    const t_name = document.getElementById("t_name");
+    const t_id = document.getElementById("t_id");
+    const t_mode = document.getElementById("t_mode");
+    const t_json = document.getElementById("t_json");
+    const btnTmplSave = document.getElementById("btnTmplSave");
+    const btnTmplLoadToBoard = document.getElementById("btnTmplLoadToBoard");
+    const btnTmplDelete = document.getElementById("btnTmplDelete");
+    const btnTmplExportOne = document.getElementById("btnTmplExportOne");
+    const btnTmplFromBoard = document.getElementById("btnTmplFromBoard");
+
+    let libMode = "fragments";
+    let selectedFragId = null;
+    let selectedTemplateId = null;
+
+    function closeMenu(){ libMenu.classList.remove("open"); }
+    btnLibMenu.addEventListener("click", (e)=>{ e.stopPropagation(); libMenu.classList.toggle("open"); });
+    document.addEventListener("click", (e)=>{ if(!libMenuWrap.contains(e.target)) closeMenu(); });
+
+    function downloadJSON(filename, obj){
+      const blob = new Blob([JSON.stringify(obj, null, 2)], {type:"application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url; a.download = filename;
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    }
+
+    miExportFrags.addEventListener("click", ()=>{ closeMenu(); downloadJSON("inforium_fragments.json", {fragments}); });
+    miExportTemplates.addEventListener("click", ()=>{ closeMenu(); downloadJSON("inforium_templates.json", {templates}); });
+    miImportFrags.addEventListener("click", ()=>{ closeMenu(); fileImportFragmentsEl.click(); });
+    miImportTemplates.addEventListener("click", ()=>{ closeMenu(); fileImportTemplatesEl.click(); });
+
+    function normalizeFrag(f){
+      const out = {...f};
+      out.duration = Number(out.duration||0);
+      out.tags = Array.isArray(out.tags) ? out.tags : (typeof out.tags==="string" ? out.tags.split(",").map(s=>s.trim()).filter(Boolean) : []);
+      if(!out.id) out.id = "frag_" + Date.now();
+      if(!out.license) out.license = "CC-BY-4.0";
+      if(!out.language) out.language = "nl";
+      if(!out.level) out.level = "B1";
+      if(!out.hospital) out.hospital = "ALL";
+      if(!out.dept) out.dept = "COMM";
+      if(!out.senderRole) out.senderRole = "COMM";
+      if(!out.infoType) out.infoType = "GENERAL";
+      if(!out.channel) out.channel = "PORTAL";
+      if(!out.moment) out.moment = "BOOKING";
+      if(!out.recipient) out.recipient = "PATIENT";
+      if(!out.vuln) out.vuln = "REGULAR";
+      if(!out.lane) out.lane = "WELCOME";
+      if(!out.code) out.code = "CODE-MISSING";
+      if(!out.title) out.title = "(zonder titel)";
+      if(!out.text) out.text = "-";
+      return out;
+    }
+
+    function uniqueFragId(base){
+      let id = base || ("frag_" + Date.now());
+      while(fragmentById[id]) id = id + "_" + Math.floor(Math.random()*1000);
+      return id;
+    }
+
+    async function readJsonFromFile(file){
+      const text = await file.text();
+      return JSON.parse(text);
+    }
+
+    fileImportFragmentsEl.addEventListener("change", async ()=>{
+      const file = fileImportFragmentsEl.files?.[0];
+      if(!file) return;
+      try{
+        const parsed = await readJsonFromFile(file);
+        const incoming = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.fragments) ? parsed.fragments : null);
+        if(!incoming) throw new Error("JSON moet een array zijn of {fragments:[...]}");
+        const byId = Object.fromEntries(fragments.map(f=>[f.id,f]));
+        incoming.forEach(f=>{
+          const nf = normalizeFrag(f);
+          if(byId[nf.id]) nf.id = uniqueFragId(nf.id);
+          byId[nf.id] = nf;
+        });
+        fragments = Object.values(byId);
+        rebuildFragmentIndex();
+        saveFragments();
+        renderLibrary(searchInputEl.value || "");
+        renderLibList();
+        alert("Fragmenten geïmporteerd.");
+      }catch(e){
+        alert("Import fragmenten mislukt: " + (e?.message || e));
+      }finally{
+        fileImportFragmentsEl.value = "";
+      }
+    });
+
+    fileImportTemplatesEl.addEventListener("change", async ()=>{
+      const file = fileImportTemplatesEl.files?.[0];
+      if(!file) return;
+      try{
+        const parsed = await readJsonFromFile(file);
+        const incoming = Array.isArray(parsed) ? parsed : (parsed && Array.isArray(parsed.templates) ? parsed.templates : null);
+        if(!incoming) throw new Error("JSON moet een array zijn of {templates:[...]}");
+        const byId = Object.fromEntries(templates.map(t=>[t.id,t]));
+        incoming.forEach(t=>{
+          if(!t.id) t.id = "tmpl_" + Date.now();
+          if(!t.name) t.name = "(zonder naam)";
+          if(!t.lanes) t.lanes = {};
+          byId[t.id] = t;
+        });
+        templates = Object.values(byId);
+        saveTemplates();
+        refreshTemplateSelect();
+        renderLibList();
+        alert("Sjablonen geïmporteerd.");
+      }catch(e){
+        alert("Import sjablonen mislukt: " + (e?.message || e));
+      }finally{
+        fileImportTemplatesEl.value = "";
+      }
+    });
+
+    function openLib(which){
+      libMode = which;
+      libOverlay.classList.add("show");
+      if(which==="fragments") switchTab("fragments"); else switchTab("templates");
+      libSearch.value = "";
+      renderLibList();
+    }
+    function closeLib(){ libOverlay.classList.remove("show"); selectedFragId=null; selectedTemplateId=null; }
+
+    btnCloseLib.addEventListener("click", closeLib);
+    libOverlay.addEventListener("click", (e)=>{ if(e.target===libOverlay) closeLib(); });
+
+    function switchTab(which){
+      libMode = which;
+      if(which==="fragments"){
+        tabFragments.classList.add("active"); tabTemplates.classList.remove("active");
+        fragEditor.classList.remove("hidden"); tmplEditor.classList.add("hidden");
+      }else{
+        tabTemplates.classList.add("active"); tabFragments.classList.remove("active");
+        tmplEditor.classList.remove("hidden"); fragEditor.classList.add("hidden");
+      }
+      clearEditor();
+      renderLibList();
+    }
+    tabFragments.addEventListener("click", ()=>switchTab("fragments"));
+    tabTemplates.addEventListener("click", ()=>switchTab("templates"));
+
+    miManageFrags.addEventListener("click", ()=>{ closeMenu(); openLib("fragments"); });
+    miManageTemplates.addEventListener("click", ()=>{ closeMenu(); openLib("templates"); });
+
+    libSearch.addEventListener("input", renderLibList);
+
+    function renderLibList(){
+      const q = (libSearch.value||"").trim().toLowerCase();
+      libItems.innerHTML = "";
+      if(libMode==="fragments"){
+        fragments
+          .filter(f=>!q || (f.title||"").toLowerCase().includes(q) || (f.code||"").toLowerCase().includes(q) || (f.text||"").toLowerCase().includes(q))
+          .sort((a,b)=>(a.title||"").localeCompare(b.title||""))
+          .forEach(f=>{
+            const el = document.createElement("div");
+            el.className = "lib-item" + (f.id===selectedFragId ? " active" : "");
+            el.innerHTML = `<div class="name">${escapeHtml(f.title||"(zonder titel)")}</div>
+                            <div class="meta"><span>${escapeHtml(f.code||"-")}</span><span>${escapeHtml((f.language||"").toUpperCase())} • ${escapeHtml(f.level||"")}</span><span>${escapeHtml(f.dept||"")}</span></div>`;
+            el.addEventListener("click", ()=>{ selectedFragId=f.id; renderLibList(); loadFragmentIntoEditor(f); });
+            libItems.appendChild(el);
+          });
+      }else{
+        templates
+          .filter(t=>!q || (t.name||"").toLowerCase().includes(q) || (t.id||"").toLowerCase().includes(q))
+          .sort((a,b)=>(a.name||"").localeCompare(b.name||""))
+          .forEach(t=>{
+            const cnt = Object.values(t.lanes||{}).reduce((s,a)=> s + (Array.isArray(a)?a.length:0), 0);
+            const el = document.createElement("div");
+            el.className = "lib-item" + (t.id===selectedTemplateId ? " active" : "");
+            el.innerHTML = `<div class="name">${escapeHtml(t.name||"(zonder naam)")}</div>
+                            <div class="meta"><span>${escapeHtml(t.id||"-")}</span><span>${cnt} fragmenten</span></div>`;
+            el.addEventListener("click", ()=>{ selectedTemplateId=t.id; renderLibList(); loadTemplateIntoEditor(t); });
+            libItems.appendChild(el);
+          });
+      }
+    }
+
+    function clearEditor(){
+      if(libMode==="fragments"){
+        f_id.value=""; f_code.value=""; f_title.value=""; f_text.value="";
+        f_duration.value=0; f_language.value="nl"; f_level.value="B1"; f_license.value="CC-BY-4.0";
+        f_hospital.value="ALL"; f_dept.value="COMM"; f_senderRole.value="COMM"; f_infoType.value="GENERAL";
+        f_channel.value="PORTAL"; f_moment.value="BOOKING"; f_recipient.value="PATIENT"; f_vuln.value="REGULAR"; f_lane.value="WELCOME";
+        f_tags.value="";
+      } else {
+        t_name.value=""; t_id.value=""; t_mode.value="update"; t_json.value="{}";
+      }
+    }
+
+    btnLibNew.addEventListener("click", ()=>{
+      if(libMode==="fragments"){
+        selectedFragId=null; renderLibList(); clearEditor();
+        f_id.value = "frag_" + Date.now();
+      } else {
+        selectedTemplateId=null; renderLibList(); clearEditor();
+        t_id.value = "tmpl_" + Date.now();
+        t_mode.value = "new";
+      }
+    });
+
+    function loadFragmentIntoEditor(f){
+      clearEditor();
+      f_id.value = f.id || "";
+      f_code.value = f.code || "";
+      f_title.value = f.title || "";
+      f_text.value = f.text || "";
+      f_duration.value = Number(f.duration||0);
+      f_language.value = (f.language||"nl");
+      f_level.value = (f.level||"B1");
+      f_license.value = (f.license||"CC-BY-4.0");
+      f_hospital.value = (f.hospital||"ALL");
+      f_dept.value = (f.dept||"COMM");
+      f_senderRole.value = (f.senderRole||"COMM");
+      f_infoType.value = (f.infoType||"GENERAL");
+      f_channel.value = (f.channel||"PORTAL");
+      f_moment.value = (f.moment||"BOOKING");
+      f_recipient.value = (f.recipient||"PATIENT");
+      f_vuln.value = (f.vuln||"REGULAR");
+      f_lane.value = (f.lane||"WELCOME");
+      f_tags.value = Array.isArray(f.tags) ? f.tags.join(", ") : (f.tags||"");
+    }
+
+    function editorToFragment(){
+      return normalizeFrag({
+        id: (f_id.value||"").trim(),
+        code: (f_code.value||"").trim(),
+        title: (f_title.value||"").trim(),
+        text: (f_text.value||"").trim(),
+        duration: Number(f_duration.value||0),
+        language: f_language.value,
+        level: f_level.value,
+        license: f_license.value,
+        hospital: f_hospital.value,
+        dept: f_dept.value,
+        senderRole: f_senderRole.value,
+        infoType: f_infoType.value,
+        channel: f_channel.value,
+        moment: f_moment.value,
+        recipient: f_recipient.value,
+        vuln: f_vuln.value,
+        lane: f_lane.value,
+        tags: (f_tags.value||"").split(",").map(s=>s.trim()).filter(Boolean)
+      });
+    }
+
+    btnFragSave.addEventListener("click", ()=>{
+      const f = editorToFragment();
+      if(!f.id || !f.code || !f.title || !f.text){
+        return alert("Vul minimaal ID, code, titel en tekst in.");
+      }
+      const idx = fragments.findIndex(x=>x.id===f.id);
+      if(idx>=0) fragments[idx]=f; else fragments.push(f);
+      rebuildFragmentIndex();
+      saveFragments();
+      renderLibrary(searchInputEl.value || "");
+      selectedFragId = f.id;
+      renderLibList();
+      alert("Fragment opgeslagen.");
+    });
+
+    btnFragDup.addEventListener("click", ()=>{
+      const f = editorToFragment();
+      if(!f.code || !f.title || !f.text) return alert("Vul minimaal code, titel en tekst in.");
+      const copy = {...f};
+      copy.id = uniqueFragId((f.id||"frag") + "_copy");
+      copy.code = (f.code||"") + "-COPY";
+      fragments.push(copy);
+      rebuildFragmentIndex();
+      saveFragments();
+      renderLibrary(searchInputEl.value || "");
+      selectedFragId = copy.id;
+      renderLibList();
+      loadFragmentIntoEditor(copy);
+    });
+
+    btnFragDelete.addEventListener("click", ()=>{
+      const id = (f_id.value||"").trim();
+      if(!id) return;
+      if(!confirm("Fragment verwijderen uit de bibliotheek?")) return;
+      fragments = fragments.filter(x=>x.id!==id);
+      rebuildFragmentIndex();
+      saveFragments();
+      renderLibrary(searchInputEl.value || "");
+      selectedFragId=null;
+      renderLibList();
+      clearEditor();
+    });
+
+    btnFragExportOne.addEventListener("click", ()=>{
+      const id = (f_id.value||"").trim();
+      const f = fragmentById[id];
+      if(!f) return alert("Geen fragment geselecteerd.");
+      downloadJSON("fragment_" + id + ".json", {fragments:[f]});
+    });
+
+    function loadTemplateIntoEditor(t){
+      clearEditor();
+      t_name.value = t.name || "";
+      t_id.value = t.id || "";
+      t_json.value = JSON.stringify(t.lanes || {}, null, 2);
+      t_mode.value = "update";
+    }
+
+    btnTmplFromBoard.addEventListener("click", ()=>{
+      const laneMap = {};
+      lanesEl.querySelectorAll(".lane").forEach(lane=>{
+        const laneId = lane.dataset.laneId;
+        const body = lane.querySelector(".lane-body");
+        laneMap[laneId] = [...body.querySelectorAll(".fragment-card")].map(c=>c.dataset.fragmentId);
+      });
+      t_json.value = JSON.stringify(laneMap, null, 2);
+    });
+
+    function editorToTemplate(){
+      const id = (t_id.value||"").trim() || ("tmpl_" + Date.now());
+      const name = (t_name.value||"").trim() || "(zonder naam)";
+      let lanes = {};
+      lanes = JSON.parse(t_json.value||"{}");
+      return {id, name, lanes};
+    }
+
+    btnTmplSave.addEventListener("click", ()=>{
+      let t;
+      try{ t = editorToTemplate(); }catch(e){ return alert("Inhoud is geen geldige JSON."); }
+      const mode = t_mode.value;
+      if(mode==="new"){
+        t.id = "tmpl_" + Date.now();
+        templates.push(t);
+      }else{
+        const idx = templates.findIndex(x=>x.id===t.id);
+        if(idx>=0) templates[idx]=t; else templates.push(t);
+      }
+      selectedTemplateId = t.id;
+      saveTemplates();
+      refreshTemplateSelect();
+      renderLibList();
+      alert("Sjabloon opgeslagen.");
+    });
+
+    btnTmplLoadToBoard.addEventListener("click", ()=>{
+      const id = (t_id.value||"").trim();
+      const t = templates.find(x=>x.id===id);
+      if(!t) return alert("Sjabloon niet gevonden.");
+      applyTemplate(t);
+      closeLib();
+    });
+
+    btnTmplDelete.addEventListener("click", ()=>{
+      const id = (t_id.value||"").trim();
+      if(!id) return;
+      if(!confirm("Sjabloon verwijderen?")) return;
+      templates = templates.filter(x=>x.id!==id);
+      saveTemplates();
+      refreshTemplateSelect();
+      selectedTemplateId=null;
+      renderLibList();
+      clearEditor();
+    });
+
+    btnTmplExportOne.addEventListener("click", ()=>{
+      const id = (t_id.value||"").trim();
+      const t = templates.find(x=>x.id===id);
+      if(!t) return alert("Geen sjabloon geselecteerd.");
+      downloadJSON("template_" + id + ".json", {templates:[t]});
+    });
+
+
 
     // ===== PERSISTENCE (prototype - browser localStorage) =====
     const LS_KEYS = {
