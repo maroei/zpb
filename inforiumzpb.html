@@ -1,0 +1,375 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inforium Zorgpad Builder – Prototype</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#93a4c7; --text:#e7eeff;
+      --line:rgba(255,255,255,.12); --accent:#6aa9ff; --accent2:#77f2c7;
+      --danger:#ff6a6a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(106,169,255,.25), transparent 60%),
+                  radial-gradient(800px 500px at 90% 10%, rgba(119,242,199,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:18px 18px 10px 18px; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    header h1{margin:0; font-size:18px; letter-spacing:.2px}
+    header .sub{color:var(--muted); font-size:13px}
+    .wrap{padding:16px; max-width:1200px; margin:0 auto}
+    .grid{
+      display:grid; grid-template-columns: 380px 1fr; gap:14px;
+    }
+    @media (max-width: 980px){ .grid{grid-template-columns:1fr} }
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .card .hd h2{margin:0; font-size:14px}
+    .card .bd{padding:14px}
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row > *{flex:1}
+    label{font-size:12px; color:var(--muted); display:block; margin:0 0 6px 0}
+    input[type="text"], textarea{
+      width:100%; padding:10px 10px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:92px; resize:vertical; line-height:1.3}
+    input[type="file"]{width:100%}
+    button{
+      padding:9px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+      transition: transform .06s ease, background .12s ease;
+      white-space:nowrap;
+    }
+    button:hover{background: rgba(255,255,255,.10)}
+    button:active{transform: translateY(1px)}
+    .btn-accent{border-color: rgba(106,169,255,.55); background: rgba(106,169,255,.14)}
+    .btn-accent:hover{background: rgba(106,169,255,.20)}
+    .btn-danger{border-color: rgba(255,106,106,.55); background: rgba(255,106,106,.12)}
+    .btn-danger:hover{background: rgba(255,106,106,.18)}
+    .btn-ghost{background: transparent}
+    .pill{
+      font-size:12px; padding:3px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14); color:var(--muted);
+    }
+    .muted{color:var(--muted)}
+    .small{font-size:12px}
+    .list{
+      display:flex; flex-direction:column; gap:8px;
+      max-height: 430px; overflow:auto; padding-right:4px;
+    }
+    .item{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.20);
+      border-radius:14px;
+      padding:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .item[draggable="true"]{cursor:grab}
+    .item:active{cursor:grabbing}
+    .item .meta{min-width:0}
+    .title{font-weight:650; font-size:13px; margin:0 0 2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 255px}
+    .subline{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 255px}
+    .actions{display:flex; gap:6px; align-items:center}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:11px; padding:2px 6px; border:1px solid rgba(255,255,255,.14); border-radius:8px; color:var(--muted)
+    }
+    .dropzone{
+      border:1.5px dashed rgba(255,255,255,.22);
+      border-radius:16px;
+      background: rgba(0,0,0,.16);
+      padding:14px;
+    }
+    .dropzone.dragover{border-color: rgba(119,242,199,.75); background: rgba(119,242,199,.08)}
+    .pathlist{display:flex; flex-direction:column; gap:10px; margin-top:12px}
+    .pathitem{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:10px 10px;
+      background: rgba(0,0,0,.18);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .pathitem .left{display:flex; gap:10px; align-items:center; min-width:0}
+    .handle{
+      width:30px; height:30px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted);
+      font-weight:700;
+      flex:0 0 auto;
+    }
+    .pathitem .txt{min-width:0}
+    .pathitem .txt .title{max-width: 520px}
+    .pathitem .txt .subline{max-width: 520px}
+    .toast{
+      position:fixed; right:14px; bottom:14px;
+      background: rgba(0,0,0,.70);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:10px 12px;
+      color:var(--text);
+      font-size:13px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      max-width: 420px;
+      display:none;
+    }
+    dialog{
+      width:min(1000px, 92vw);
+      border:none;
+      border-radius:18px;
+      padding:0;
+      background: rgba(16,24,44,.92);
+      color:var(--text);
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    }
+    dialog::backdrop{background: rgba(0,0,0,.55)}
+    .dlg-hd{
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .dlg-hd .t{font-weight:700; font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .dlg-bd{padding:14px}
+    .iframewrap{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      overflow:hidden;
+      height: min(70vh, 640px);
+      background: rgba(0,0,0,.18);
+      position:relative;
+    }
+    iframe{width:100%; height:100%; border:0; background:white}
+    .overlay{
+      position:absolute; inset:0;
+      display:none;
+      align-items:center; justify-content:center;
+      padding:18px;
+      background: rgba(0,0,0,.70);
+      text-align:center;
+    }
+    .overlay .box{
+      border:1px solid rgba(255,255,255,.18);
+      background: rgba(16,24,44,.85);
+      border-radius:14px;
+      padding:12px;
+      max-width: 560px;
+    }
+    .hr{height:1px; background: var(--line); margin:12px 0}
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Inforium Zorgpad Builder <span class="pill">prototype</span></h1>
+    <div class="sub">Bouw een zorgpad door Inforiums (IDs) te beheren en te slepen naar een storyboard.</div>
+  </div>
+  <div class="row" style="flex:0 0 auto">
+    <button class="btn-accent" id="btnExport">Export JSON</button>
+    <button id="btnImport">Import JSON</button>
+    <button class="btn-danger" id="btnReset">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- Library -->
+    <section class="card">
+      <div class="hd">
+        <h2>Bibliotheek</h2>
+        <span class="pill"><span id="libCount">0</span> items</span>
+      </div>
+      <div class="bd">
+        <div class="row">
+          <div style="flex:2">
+            <label>ID of URL toevoegen</label>
+            <input id="singleAdd" type="text" placeholder="bijv. 377443 of https://www.inforium.nl/weblink/377443" />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <button class="btn-accent" id="btnAddOne">Toevoegen</button>
+          </div>
+        </div>
+
+        <div style="margin-top:10px">
+          <label>Meerdere ID’s/URLs plakken (1 per regel)</label>
+          <textarea id="bulkAdd" placeholder="377443&#10;https://www.inforium.nl/weblink/123456&#10;..."></textarea>
+          <div class="row" style="margin-top:8px">
+            <button id="btnAddBulk" class="btn-accent">Toevoegen</button>
+            <button id="btnLoadTitles">Titels (opnieuw) laden</button>
+          </div>
+          <div class="small muted" style="margin-top:6px">
+            Tip: titels laden kan mislukken door browser-beveiliging (CORS). Dan blijft het “Inforium #ID”.
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div style="flex:2">
+            <label>Upload bibliotheekbestand (txt/csv/json)</label>
+            <input id="fileInput" type="file" accept=".txt,.csv,.json" />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <button id="btnUpload">Upload verwerken</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <div style="flex:2">
+            <label>Zoeken</label>
+            <input id="search" type="text" placeholder="zoek op titel, ID..." />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <span class="kbd">drag →</span>
+          </div>
+        </div>
+
+        <div style="margin-top:10px" class="list" id="libList"></div>
+      </div>
+    </section>
+
+    <!-- Carepath -->
+    <section class="card">
+      <div class="hd">
+        <h2>Zorgpad</h2>
+        <span class="pill"><span id="pathCount">0</span> stappen</span>
+      </div>
+      <div class="bd">
+        <div class="dropzone" id="dropzone">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:750; margin-bottom:4px">Sleep Inforiums hierheen</div>
+              <div class="small muted">Je kunt ook stappen binnen het zorgpad herordenen met drag &amp; drop.</div>
+            </div>
+            <div class="row" style="flex:0 0 auto">
+              <button id="btnClearPath" class="btn-danger">Zorgpad leegmaken</button>
+            </div>
+          </div>
+          <div class="pathlist" id="pathList"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <button id="btnCopyLinks">Kopieer zorgpad links</button>
+          <button id="btnCopyIds">Kopieer zorgpad IDs</button>
+        </div>
+
+        <div class="small muted" style="margin-top:8px">
+          Popup gebruikt een <span class="kbd">&lt;dialog&gt;</span> + <span class="kbd">&lt;iframe&gt;</span>. Als Inforium embedding blokkeert, kun je alsnog “Open in nieuw tabblad” gebruiken.
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="previewDlg">
+  <div class="dlg-hd">
+    <div class="t" id="dlgTitle">Preview</div>
+    <div class="row" style="flex:0 0 auto">
+      <button id="btnOpenNew" class="btn-accent">Open in nieuw tabblad</button>
+      <button id="btnCloseDlg">Sluiten</button>
+    </div>
+  </div>
+  <div class="dlg-bd">
+    <div class="iframewrap">
+      <iframe id="dlgFrame" title="Inforium preview"></iframe>
+      <div class="overlay" id="frameOverlay">
+        <div class="box">
+          <div style="font-weight:800; margin-bottom:6px">Embedding lijkt geblokkeerd</div>
+          <div class="small muted" style="margin-bottom:10px">
+            Sommige sites staan geen weergave in een iframe toe (security headers). Open dan in een nieuw tabblad.
+          </div>
+          <button id="btnOpenNew2" class="btn-accent">Open in nieuw tabblad</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  const BASE = "https://www.inforium.nl/weblink/";
+  const LS_KEY = "inforium_zorgpad_builder_v1";
+
+  const el = (id) => document.getElementById(id);
+  const toast = el("toast");
+
+  // State
+  let state = {
+    library: [
+      // voorbeeld
+      { id: 377443, url: BASE + "377443", title: "Inforium #377443", titleStatus: "unknown" }
+    ],
+    path: []
+  };
+
+  // ---------- Persistence ----------
+  function save(){
+    localStorage.setItem(LS_KEY, JSON.stringify(state));
+  }
+  function load(){
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return;
+    try{
+      const obj = JSON.parse(raw);
+      if(obj && Array.isArray(obj.library) && Array.isArray(obj.path)){
+        state = obj;
+      }
+    }catch(e){}
+  }
+
+  // ---------- Utils ----------
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display="none", 2800);
+  }
+
+  function normalizeToIdOrNull(s){
+    if(!s) return null;
+    const str = String(s).trim();
+    if(!str) return null;
+
+    // accept raw number
+    if(/^\d+$/.test(str)) return parseInt(str, 10);
+
+    // accept full url or anything ending in /digits
+    const m = str.match(/\/(\d+)\s*$/);
+    if(m) return parseInt(m[1], 10);
+
+    return null;
+  }
+
+  function makeItem(id){
+    return { id, url: BASE + id,
