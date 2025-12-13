@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="nl">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Inforium Zorgpad Builder – Demo Prototype</title>
+  <style>
+    :root{
+      --bg:#0b1020; --card:#121a33; --muted:#93a4c7; --text:#e7eeff;
+      --line:rgba(255,255,255,.12); --accent:#6aa9ff; --accent2:#77f2c7; --danger:#ff6a6a;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: radial-gradient(1200px 600px at 20% -10%, rgba(106,169,255,.25), transparent 60%),
+                  radial-gradient(800px 500px at 90% 10%, rgba(119,242,199,.18), transparent 55%),
+                  var(--bg);
+      color:var(--text);
+    }
+    header{
+      padding:18px 18px 10px 18px; border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap;
+    }
+    header h1{margin:0; font-size:18px; letter-spacing:.2px}
+    header .sub{color:var(--muted); font-size:13px}
+    .wrap{padding:16px; max-width:1250px; margin:0 auto}
+    .grid{display:grid; grid-template-columns: 420px 1fr; gap:14px;}
+    @media (max-width: 1040px){ .grid{grid-template-columns:1fr} }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.02));
+      border:1px solid var(--line);
+      border-radius:16px;
+      box-shadow: 0 10px 30px rgba(0,0,0,.25);
+      overflow:hidden;
+    }
+    .card .hd{
+      padding:14px 14px 10px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .card .hd h2{margin:0; font-size:14px}
+    .card .bd{padding:14px}
+
+    .row{display:flex; gap:10px; flex-wrap:wrap; align-items:center}
+    .row > *{flex:1}
+    label{font-size:12px; color:var(--muted); display:block; margin:0 0 6px 0}
+    input[type="text"], textarea{
+      width:100%; padding:10px 10px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(0,0,0,.22);
+      color: var(--text);
+      outline:none;
+    }
+    textarea{min-height:78px; resize:vertical; line-height:1.3}
+    input[type="file"]{width:100%}
+
+    button{
+      padding:9px 12px;
+      border-radius:12px;
+      border:1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.06);
+      color: var(--text);
+      cursor:pointer;
+      transition: transform .06s ease, background .12s ease;
+      white-space:nowrap;
+    }
+    button:hover{background: rgba(255,255,255,.10)}
+    button:active{transform: translateY(1px)}
+    .btn-accent{border-color: rgba(106,169,255,.55); background: rgba(106,169,255,.14)}
+    .btn-accent:hover{background: rgba(106,169,255,.20)}
+    .btn-danger{border-color: rgba(255,106,106,.55); background: rgba(255,106,106,.12)}
+    .btn-danger:hover{background: rgba(255,106,106,.18)}
+    .btn-ghost{background: transparent}
+    .pill{
+      font-size:12px; padding:3px 8px; border-radius:999px;
+      border:1px solid rgba(255,255,255,.14); color:var(--muted);
+    }
+    .pill-on{border-color: rgba(119,242,199,.55); color: rgba(119,242,199,.95); background: rgba(119,242,199,.10)}
+    .small{font-size:12px}
+    .muted{color:var(--muted)}
+    .hr{height:1px; background: var(--line); margin:12px 0}
+    .kbd{
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size:11px; padding:2px 6px; border:1px solid rgba(255,255,255,.14); border-radius:8px; color:var(--muted)
+    }
+
+    .list{
+      display:flex; flex-direction:column; gap:8px;
+      max-height: 420px; overflow:auto; padding-right:4px;
+    }
+    .item{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.20);
+      border-radius:14px;
+      padding:10px;
+      display:flex; align-items:flex-start; justify-content:space-between; gap:10px;
+    }
+    .item[draggable="true"]{cursor:grab}
+    .item:active{cursor:grabbing}
+    .meta{min-width:0}
+    .title{font-weight:700; font-size:13px; margin:0 0 2px 0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 285px}
+    .subline{font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width: 285px}
+    .actions{display:flex; gap:6px; align-items:center}
+
+    .dropzone{
+      border:1.5px dashed rgba(255,255,255,.22);
+      border-radius:16px;
+      background: rgba(0,0,0,.16);
+      padding:14px;
+    }
+    .dropzone.dragover{border-color: rgba(119,242,199,.75); background: rgba(119,242,199,.08)}
+    .pathlist{display:flex; flex-direction:column; gap:10px; margin-top:12px}
+    .pathitem{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:16px;
+      padding:10px 10px;
+      background: rgba(0,0,0,.18);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .pathitem .left{display:flex; gap:10px; align-items:center; min-width:0}
+    .handle{
+      width:30px; height:30px; border-radius:12px;
+      border:1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.05);
+      display:flex; align-items:center; justify-content:center;
+      color:var(--muted);
+      font-weight:800;
+      flex:0 0 auto;
+    }
+    .pathitem .txt{min-width:0}
+    .pathitem .txt .title{max-width: 650px}
+    .pathitem .txt .subline{max-width: 650px}
+
+    .toast{
+      position:fixed; right:14px; bottom:14px;
+      background: rgba(0,0,0,.70);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:14px;
+      padding:10px 12px;
+      color:var(--text);
+      font-size:13px;
+      box-shadow: 0 12px 30px rgba(0,0,0,.35);
+      max-width: 420px;
+      display:none;
+      z-index: 99;
+    }
+
+    dialog{
+      width:min(920px, 92vw);
+      border:none;
+      border-radius:18px;
+      padding:0;
+      background: rgba(16,24,44,.92);
+      color:var(--text);
+      box-shadow: 0 20px 60px rgba(0,0,0,.55);
+    }
+    dialog::backdrop{background: rgba(0,0,0,.55)}
+    .dlg-hd{
+      padding:12px 14px;
+      border-bottom:1px solid var(--line);
+      display:flex; align-items:center; justify-content:space-between; gap:10px;
+    }
+    .dlg-hd .t{font-weight:800; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+    .dlg-bd{padding:14px}
+    .contentbox{
+      border:1px solid rgba(255,255,255,.12);
+      border-radius:14px;
+      background: rgba(0,0,0,.18);
+      padding:12px;
+      max-height:min(72vh, 660px);
+      overflow:auto;
+    }
+    ul{margin:8px 0 0 18px}
+    .chipbar{display:flex; gap:8px; flex-wrap:wrap}
+    .templatecard{
+      border:1px solid rgba(255,255,255,.12);
+      background: rgba(0,0,0,.18);
+      border-radius:14px;
+      padding:10px;
+      display:flex;
+      align-items:flex-start;
+      justify-content:space-between;
+      gap:10px;
+    }
+  </style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Inforium Zorgpad Builder <span class="pill">demo</span></h1>
+    <div class="sub">Met sjablonen (MDL/KNO/Gyn) + fasefilter + no-show bibliotheek.</div>
+  </div>
+  <div class="row" style="flex:0 0 auto">
+    <button class="btn-accent" id="btnExport">Export JSON</button>
+    <button id="btnImport">Import JSON</button>
+    <button class="btn-danger" id="btnReset">Reset</button>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="grid">
+    <!-- LEFT: Templates + Library -->
+    <section class="card">
+      <div class="hd">
+        <h2>Sjablonen & Bibliotheek</h2>
+        <span class="pill"><span id="libCount">0</span> items</span>
+      </div>
+
+      <div class="bd">
+        <!-- Templates -->
+        <div>
+          <label>Demo-zorgpaden (sjablonen)</label>
+          <div id="templateList" style="display:flex; flex-direction:column; gap:10px;"></div>
+          <div class="small muted" style="margin-top:8px">
+            Tip: laad een sjabloon, pas daarna het zorgpad aan (drag/drop of verwijderen).
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <!-- Add single -->
+        <div class="row">
+          <div style="flex:2">
+            <label>ID of URL toevoegen (komt als “Inforium #ID”)</label>
+            <input id="singleAdd" type="text" placeholder="bijv. 377443 of https://www.inforium.nl/weblink/377443" />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <button class="btn-accent" id="btnAddOne">Toevoegen</button>
+          </div>
+        </div>
+
+        <!-- Bulk -->
+        <div style="margin-top:10px">
+          <label>Meerdere ID’s/URLs plakken (1 per regel)</label>
+          <textarea id="bulkAdd" placeholder="100099&#10;https://www.inforium.nl/weblink/100100"></textarea>
+          <div class="row" style="margin-top:8px">
+            <button id="btnAddBulk" class="btn-accent">Toevoegen</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <!-- Upload -->
+        <div class="row">
+          <div style="flex:2">
+            <label>Upload (json/txt/csv)</label>
+            <input id="fileInput" type="file" accept=".txt,.csv,.json" />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <button id="btnUpload">Upload verwerken</button>
+          </div>
+        </div>
+
+        <div class="hr"></div>
+
+        <!-- Phase filter -->
+        <div>
+          <label>Fase filter</label>
+          <div class="chipbar" id="phaseBar"></div>
+          <div class="small muted" style="margin-top:6px">Filter werkt op de bibliotheek (handig voor demo per moment).</div>
+        </div>
+
+        <div class="hr"></div>
+
+        <!-- Search -->
+        <div class="row">
+          <div style="flex:2">
+            <label>Zoeken</label>
+            <input id="search" type="text" placeholder="zoek op titel of ID…" />
+          </div>
+          <div style="flex:0 0 auto; align-self:flex-end">
+            <span class="kbd">drag →</span>
+          </div>
+        </div>
+
+        <div style="margin-top:10px" class="list" id="libList"></div>
+      </div>
+    </section>
+
+    <!-- RIGHT: Carepath -->
+    <section class="card">
+      <div class="hd">
+        <h2>Zorgpad</h2>
+        <span class="pill"><span id="pathCount">0</span> stappen</span>
+      </div>
+      <div class="bd">
+        <div class="dropzone" id="dropzone">
+          <div style="display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap">
+            <div>
+              <div style="font-weight:850; margin-bottom:4px">Sleep Inforiums hierheen</div>
+              <div class="small muted">Herorden kan via drag & drop in de lijst. Klik 👁️ voor preview.</div>
+            </div>
+            <div class="row" style="flex:0 0 auto">
+              <button id="btnClearPath" class="btn-danger">Zorgpad leegmaken</button>
+            </div>
+          </div>
+          <div class="pathlist" id="pathList"></div>
+        </div>
+
+        <div class="hr"></div>
+
+        <div class="row">
+          <button id="btnCopyLinks">Kopieer zorgpad links</button>
+          <button id="btnCopyIds">Kopieer zorgpad IDs</button>
+        </div>
+
+        <div class="small muted" style="margin-top:10px">
+          In dit demo-prototype komt titel/inhoud uit de bibliotheek (geen CORS scraping).<br/>
+          Klik “Open originele Inforium” om de echte webpagina te openen.
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<dialog id="previewDlg">
+  <div class="dlg-hd">
+    <div class="t" id="dlgTitle">Preview</div>
+    <div class="row" style="flex:0 0 auto">
+      <button id="btnOpenNew" class="btn-accent">Open originele Inforium</button>
+      <button id="btnCloseDlg">Sluiten</button>
+    </div>
+  </div>
+  <div class="dlg-bd">
+    <div class="contentbox">
+      <div class="small muted" id="dlgMeta"></div>
+      <div class="hr"></div>
+      <div id="dlgContent"></div>
+    </div>
+  </div>
+</dialog>
+
+<script>
+(function(){
+  const BASE = "https://www.inforium.nl/weblink/";
+  const LS_KEY = "inforium_zorgpad_builder_demo_v3";
+
+  // ---- Library defaults (22 items) with phase labels ----
+  // phase: "voor" | "aankomst" | "tijdens" | "na"
+  const DEFAULT_LIBRARY = [
+    { id: 377443, url: BASE+"377443", phase:"voor", title:"Voorbereiding poli", content:["Wat meenemen"] },
+    { id: 100001, url: BASE+"100001", phase:"aankomst", title:"Op de poli", content:["Meld u aan bij de aanmeldzuil"] },
+    { id: 100002, url: BASE+"100002", phase:"na", title:"Na de poli", content:["Maak een nieuwe afspraak","..."] },
+
+    { id: 100003, url: BASE+"100003", phase:"voor", title:"Afspraak bevestigd", content:[
+      "Uw afspraak is bevestigd","Datum en tijd van uw afspraak","U hoeft niets te doen"
+    ]},
+    { id: 100004, url: BASE+"100004", phase:"voor", title:"Kunt u niet komen?", content:[
+      "Kunt u niet komen? Zeg uw afspraak af","Afzeggen kan makkelijk","Dan helpen wij een andere patiënt"
+    ]},
+    { id: 100005, url: BASE+"100005", phase:"voor", title:"Route naar het ziekenhuis", content:[
+      "Zo komt u naar het ziekenhuis","Met auto, fiets of openbaar vervoer","Plan extra reistijd"
+    ]},
+    { id: 100006, url: BASE+"100006", phase:"voor", title:"Kom op tijd", content:[
+      "Kom 10 minuten eerder","Dan heeft u tijd om u aan te melden","Zo verloopt uw afspraak rustig"
+    ]},
+    { id: 100007, url: BASE+"100007", phase:"aankomst", title:"Aanmelden bij de zuil", content:[
+      "Meld u aan bij de aanmeldzuil","Gebruik uw geboortedatum","Volg de aanwijzingen op het scherm"
+    ]},
+    { id: 100008, url: BASE+"100008", phase:"aankomst", title:"Wat als u te laat bent?", content:[
+      "Bent u te laat? Meld dit bij de balie","Soms kan de afspraak nog doorgaan","Soms maken we een nieuwe afspraak"
+    ]},
+    { id: 100009, url: BASE+"100009", phase:"voor", title:"Wat neemt u mee?", content:[
+      "Neem uw identiteitsbewijs mee","Neem uw zorgpas mee","Neem een medicatielijst mee"
+    ]},
+    { id: 100010, url: BASE+"100010", phase:"voor", title:"Begeleiding meenemen", content:[
+      "U mag iemand meenemen","Dat kan helpen bij het gesprek","Samen onthoudt u meer"
+    ]},
+    { id: 100011, url: BASE+"100011", phase:"voor", title:"Duur van de afspraak", content:[
+      "De afspraak duurt ongeveer … minuten","Houd hier rekening mee","Soms kan het iets uitlopen"
+    ]},
+    { id: 100012, url: BASE+"100012", phase:"na", title:"Na uw afspraak", content:[
+      "U krijgt uitleg over het vervolg","Soms is een nieuwe afspraak nodig","Vragen mag u altijd stellen"
+    ]},
+
+    { id: 100013, url: BASE+"100013", phase:"tijdens", title:"Wat gebeurt er tijdens uw afspraak?", content:[
+      "U heeft een gesprek met de zorgverlener","U kunt vragen stellen","De zorgverlener maakt soms aantekeningen"
+    ]},
+    { id: 100014, url: BASE+"100014", phase:"tijdens", title:"Vragen stellen mag", content:[
+      "U mag altijd vragen stellen","Schrijf vragen vooraf op","Vraag om uitleg als iets niet duidelijk is"
+    ]},
+    { id: 100015, url: BASE+"100015", phase:"tijdens", title:"Onderzoek of meting", content:[
+      "Soms krijgt u een onderzoek","Dit wordt eerst uitgelegd","Het onderzoek doet meestal geen pijn"
+    ]},
+
+    { id: 100016, url: BASE+"100016", phase:"voor", title:"Herinnering voor uw afspraak", content:[
+      "U krijgt een herinnering voor uw afspraak","Controleer datum en tijd","Kunt u niet komen? Zeg dan af"
+    ]},
+    { id: 100017, url: BASE+"100017", phase:"voor", title:"Afspraak verzetten", content:[
+      "Wilt u een andere datum?","U kunt uw afspraak verzetten","Zo voorkomt u een no-show"
+    ]},
+    { id: 100018, url: BASE+"100018", phase:"voor", title:"Hulp nodig bij komen?", content:[
+      "Lukt het niet om zelf te komen?","Vraag iemand om hulp","Bel het ziekenhuis bij problemen"
+    ]},
+    { id: 100019, url: BASE+"100019", phase:"voor", title:"Wat als u het spannend vindt?", content:[
+      "Het is normaal om spanning te voelen","Praat erover met iemand","Vertel het aan de zorgverlener"
+    ]},
+    { id: 100020, url: BASE+"100020", phase:"tijdens", title:"Uw gegevens en privacy", content:[
+      "Uw gegevens worden veilig bewaard","Alleen zorgverleners mogen ze zien","U mag altijd vragen stellen"
+    ]},
+    { id: 100021, url: BASE+"100021", phase:"na", title:"Contact na uw afspraak", content:[
+      "Heeft u later nog vragen?","U kunt contact opnemen","Gebruik telefoon of patiëntenportaal"
+    ]}
+  ];
+
+  // ---- Templates (3 demo carepaths) ----
+  const TEMPLATES = [
+    {
+      id: "template-mdl",
+      name: "MDL – Polikliniek consult",
+      description: "No-show demo: bevestigen → herinneren → logistiek → consult → vervolg.",
+      steps: [377443,100003,100016,100004,100009,100005,100006,100007,100013,100014,100002,100012]
+    },
+    {
+      id: "template-kno",
+      name: "KNO – Eerste consult",
+      description: "Demo: spanning verminderen + duidelijke flow + onderzoek/methode.",
+      steps: [377443,100003,100019,100009,100005,100006,100001,100007,100015,100014,100002,100021]
+    },
+    {
+      id: "template-gyn",
+      name: "Gynaecologie – Polikliniek",
+      description: "Demo: begeleiding + hulp bij komen + privacy + nazorg/contact.",
+      steps: [377443,100003,100010,100018,100009,100005,100006,100007,100013,100020,100012,100021]
+    }
+  ];
+
+  const PHASES = [
+    { key:"all", label:"Alle" },
+    { key:"voor", label:"Voor" },
+    { key:"aankomst", label:"Aankomst" },
+    { key:"tijdens", label:"Tijdens" },
+    { key:"na", label:"Na" }
+  ];
+
+  const el = (id) => document.getElementById(id);
+  const toast = el("toast");
+
+  let activePhase = "all";
+  let state = { library: [], path: [] };
+
+  // ---------- Storage ----------
+  function save(){ localStorage.setItem(LS_KEY, JSON.stringify(state)); }
+  function load(){
+    const raw = localStorage.getItem(LS_KEY);
+    if(!raw) return false;
+    try{
+      const obj = JSON.parse(raw);
+      if(obj && Array.isArray(obj.library) && Array.isArray(obj.path)){
+        state = obj;
+        return true;
+      }
+    }catch(e){}
+    return false;
+  }
+
+  // ---------- Utils ----------
+  function showToast(msg){
+    toast.textContent = msg;
+    toast.style.display = "block";
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toast.style.display="none", 2600);
+  }
+
+  function normalizeToIdOrNull(s){
+    if(!s) return null;
+    const str = String(s).trim();
+    if(!str) return null;
+    if(/^\d+$/.test(str)) return parseInt(str, 10);
+    const m = str.match(/\/(\d+)\s*$/);
+    if(m) return parseInt(m[1], 10);
+    return null;
+  }
+
+  function makeItem(id){
+    return { id, url: BASE + id, phase:"voor", title:"Inforium #" + id, content:[] };
+  }
+
+  function dedupeLibrary(){
+    const map = new Map();
+    for(const it of state.library){
+      if(!it || it.id == null) continue;
+      const k = String(it.id);
+      const ex = map.get(k);
+      if(!ex){
+        map.set(k, it);
+      }else{
+        // merge: keep best title/content/phase if present
+        const betterTitle = (ex.title && !/^Inforium #/.test(ex.title)) ? ex.title : it.title;
+        const betterContent = (ex.content && ex.content.length) ? ex.content : (it.content || []);
+        const betterPhase = ex.phase || it.phase || "voor";
+        map.set(k, { ...it, title: betterTitle, content: betterContent, phase: betterPhase, url: (ex.url||it.url) });
+      }
+    }
+    state.library = Array.from(map.values());
+  }
+
+  function esc(s){
+    return String(s ?? "")
+      .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+      .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+  }
+  function safeParse(s){ try{ return JSON.parse(s); }catch(e){ return null; } }
+
+  // ---------- Filtering ----------
+  function getLibFiltered(){
+    const q = el("search").value.trim().toLowerCase();
+    return state.library
+      .filter(it => (activePhase==="all" || it.phase===activePhase))
+      .filter(it => !q || String(it.id).includes(q) || (it.title||"").toLowerCase().includes(q))
+      .sort((a,b)=> (a.phase||"").localeCompare(b.phase||"") || (a.title||"").localeCompare(b.title||""));
+  }
+
+  // ---------- Render ----------
+  function render(){
+    el("libCount").textContent = state.library.length;
+    el("pathCount").textContent = state.path.length;
+
+    // phase bar
+    const bar = el("phaseBar");
+    bar.innerHTML = "";
+    for(const p of PHASES){
+      const btn = document.createElement("button");
+      btn.textContent = p.label;
+      if(activePhase === p.key) btn.classList.add("pill-on");
+      btn.addEventListener("click", ()=>{ activePhase = p.key; render(); });
+      bar.appendChild(btn);
+    }
+
+    // templates
+    const tlist = el("templateList");
+    tlist.innerHTML = "";
+    for(const t of TEMPLATES){
+      const node = document.createElement("div");
+      node.className = "templatecard";
+      node.innerHTML = `
+        <div style="min-width:0">
+          <div style="font-weight:850; font-size:13px; margin:0 0 3px 0; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(t.name)}</div>
+          <div class="small muted" style="white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${esc(t.description)}</div>
+          <div class="small muted" style="margin-top:6px">${t.steps.length} stappen</div>
+        </div>
+        <div class="actions" style="flex:0 0 auto">
+          <button class="btn-accent" data-action="load">Gebruik</button>
+        </div>
+      `;
+      node.querySelector('[data-action="load"]').addEventListener("click", ()=>{
+        loadTemplate(t);
+      });
+      tlist.appendChild(node);
+    }
+
+    // library list
+    const list = el("libList");
+    list.innerHTML = "";
+    for(const it of getLibFiltered()){
+      const node = document.createElement("div");
+      node.className = "item";
+      node.draggable = true;
+      node.dataset.kind = "library";
+      node.dataset.id = it.id;
+
+      const phaseLabel = phaseLabelFor(it.phase);
+      const hasContent = (it.content && it.content.length) ? `${it.content.length} punt(en)` : "geen inhoud";
+
+      node.innerHTML = `
+        <div class="meta">
+          <div class="title" title="${esc(it.title)}">${esc(it.title)}</div>
+          <div class="subline" title="${esc(it.url)}">ID ${it.id} · ${phaseLabel} · ${hasContent}</div>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-action="preview" title="Preview">👁️</button>
+          <button class="btn-ghost" data-action="addtopath" title="Naar zorgpad">➕</button>
+          <button class="btn-ghost" data-action="remove" title="Verwijder">🗑️</button>
+        </div>
+      `;
+
+      node.addEventListener("dragstart", (ev)=>{
+        ev.dataTransfer.setData("text/plain", JSON.stringify({kind:"library", id: it.id}));
+        ev.dataTransfer.effectAllowed = "copy";
+      });
+
+      node.addEventListener("click", (ev)=>{
+        const btn = ev.target.closest("button");
+        if(!btn) return;
+        const act = btn.dataset.action;
+
+        if(act==="preview") openPreview(it.id);
+        if(act==="addtopath") addToPath(it.id);
+        if(act==="remove"){
+          state.library = state.library.filter(x=>x.id!==it.id);
+          state.path = state.path.filter(x=>x.id!==it.id);
+          save(); render();
+          showToast("Verwijderd.");
+        }
+      });
+
+      list.appendChild(node);
+    }
+
+    // path list
+    const pathList = el("pathList");
+    pathList.innerHTML = "";
+    state.path.forEach((step, idx)=>{
+      const it = state.library.find(x=>x.id===step.id) || makeItem(step.id);
+
+      const node = document.createElement("div");
+      node.className = "pathitem";
+      node.draggable = true;
+      node.dataset.kind = "path";
+      node.dataset.index = idx;
+
+      node.innerHTML = `
+        <div class="left">
+          <div class="handle" title="Sleep">≡</div>
+          <div class="txt">
+            <div class="title" title="${esc(it.title)}">${esc(it.title)}</div>
+            <div class="subline">Stap ${idx+1} · ID ${it.id} · ${phaseLabelFor(it.phase)}</div>
+          </div>
+        </div>
+        <div class="actions">
+          <button class="btn-ghost" data-action="preview" title="Preview">👁️</button>
+          <button class="btn-ghost" data-action="up" title="Omhoog">⬆️</button>
+          <button class="btn-ghost" data-action="down" title="Omlaag">⬇️</button>
+          <button class="btn-ghost" data-action="remove" title="Verwijder">🗑️</button>
+        </div>
+      `;
+
+      node.addEventListener("dragstart", (ev)=>{
+        ev.dataTransfer.setData("text/plain", JSON.stringify({kind:"path", index: idx}));
+        ev.dataTransfer.effectAllowed = "move";
+      });
+
+      node.addEventListener("dragover", (ev)=> ev.preventDefault());
+      node.addEventListener("drop", (ev)=>{
+        ev.preventDefault();
+        const payload = safeParse(ev.dataTransfer.getData("text/plain"));
+        if(!payload) return;
+
+        if(payload.kind==="path") movePath(payload.index, idx);
+        if(payload.kind==="library") insertToPath(payload.id, idx);
+      });
+
+      node.addEventListener("click", (ev)=>{
+        const btn = ev.target.closest("button");
+        if(!btn) return;
+        const act = btn.dataset.action;
+
+        if(act==="preview") openPreview(it.id);
+        if(act==="remove"){ state.path.splice(idx,1); save(); render(); }
+        if(act==="up" && idx>0) movePath(idx, idx-1);
+        if(act==="down" && idx<state.path.length-1) movePath(idx, idx+1);
+      });
+
+      pathList.appendChild(node);
+    });
+  }
+
+  function phaseLabelFor(key){
+    if(key==="voor") return "Voor";
+    if(key==="aankomst") return "Aankomst";
+    if(key==="tijdens") return "Tijdens";
+    if(key==="na") return "Na";
+    return "—";
+  }
+
+  // ---------- Template load ----------
+  function loadTemplate(t){
+    // Ensure all IDs exist in library (fallback if not)
+    for(const id of t.steps){
+      if(!state.library.some(x=>x.id===id)) state.library.push(makeItem(id));
+    }
+    dedupeLibrary();
+    state.path = t.steps.map(id => ({id}));
+    save(); render();
+    showToast("Sjabloon geladen: " + t.name);
+  }
+
+  // ---------- Path operations ----------
+  function addToPath(id){
+    if(!state.library.some(x=>x.id===id)) state.library.push(makeItem(id));
+    dedupeLibrary();
+    state.path.push({id});
+    save(); render();
+    showToast("Toegevoegd.");
+  }
+  function insertToPath(id, index){
+    if(!state.library.some(x=>x.id===id)) state.library.push(makeItem(id));
+    dedupeLibrary();
+    state.path.splice(index,0,{id});
+    save(); render();
+    showToast("Ingevoegd.");
+  }
+  function movePath(from, to){
+    from = Number(from); to = Number(to);
+    if(from===to) return;
+    const [x] = state.path.splice(from,1);
+    state.path.splice(to,0,x);
+    save(); render();
+  }
+
+  // ---------- Add IDs ----------
+  function addMany(lines){
+    const ids = [];
+    for(const raw of lines){
+      const id = normalizeToIdOrNull(raw);
+      if(id!==null) ids.push(id);
+    }
+    if(ids.length===0){ showToast("Geen geldige IDs/URLs."); return; }
+
+    for(const id of ids){
+      if(!state.library.some(x=>x.id===id)) state.library.push(makeItem(id));
+    }
+    dedupeLibrary();
+    save(); render();
+    showToast(ids.length + " item(s) toegevoegd.");
+  }
+
+  // ---------- Upload import ----------
+  async function readFileAsText(file){
+    return new Promise((resolve, reject)=>{
+      const r = new FileReader();
+      r.onload = ()=> resolve(String(r.result || ""));
+      r.onerror = ()=> reject(r.error);
+      r.readAsText(file);
+    });
+  }
+
+  // ---------- Preview dialog ----------
+  const dlg = el("previewDlg");
+  const dlgTitle = el("dlgTitle");
+  const dlgMeta = el("dlgMeta");
+  const dlgContent = el("dlgContent");
+  let currentUrl = null;
+
+  function openPreview(id){
+    const it = state.library.find(x=>x.id===id) || makeItem(id);
+    currentUrl = it.url;
+
+    dlgTitle.textContent = it.title || ("Inforium #"+it.id);
+    dlgMeta.textContent = `ID ${it.id} · ${phaseLabelFor(it.phase)} · ${it.url}`;
+
+    const lines = Array.isArray(it.content) ? it.content : (it.content ? [String(it.content)] : []);
+    if(lines.length){
+      dlgContent.innerHTML = "<ul>" + lines.map(x=>"<li>"+esc(x)+"</li>").join("") + "</ul>";
+    }else{
+      dlgContent.innerHTML = "<div class='small muted'>Geen inhoud opgeslagen voor deze Inforium.</div>";
+    }
+    dlg.showModal();
+  }
+
+  el("btnCloseDlg").addEventListener("click", ()=> dlg.close());
+  el("btnOpenNew").addEventListener("click", ()=> currentUrl && window.open(currentUrl, "_blank", "noopener,noreferrer"));
+  dlg.addEventListener("close", ()=>{ currentUrl=null; dlgMeta.textContent=""; dlgContent.innerHTML=""; });
+
+  // ---------- Dropzone ----------
+  const dropzone = el("dropzone");
+  dropzone.addEventListener("dragover", (ev)=>{ ev.preventDefault(); dropzone.classList.add("dragover"); });
+  dropzone.addEventListener("dragleave", ()=> dropzone.classList.remove("dragover"));
+  dropzone.addEventListener("drop", (ev)=>{
+    ev.preventDefault();
+    dropzone.classList.remove("dragover");
+    const payload = safeParse(ev.dataTransfer.getData("text/plain"));
+    if(payload?.kind==="library") addToPath(payload.id);
+  });
+
+  // ---------- Buttons / inputs ----------
+  el("btnAddOne").addEventListener("click", ()=>{
+    addMany([el("singleAdd").value]);
+    el("singleAdd").value = "";
+  });
+
+  el("btnAddBulk").addEventListener("click", ()=>{
+    const text = el("bulkAdd").value || "";
+    const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+    addMany(lines);
+    el("bulkAdd").value = "";
+  });
+
+  el("btnUpload").addEventListener("click", async ()=>{
+    const f = el("fileInput").files?.[0];
+    if(!f){ showToast("Kies eerst een bestand."); return; }
+    const text = await readFileAsText(f);
+    const ext = (f.name.split(".").pop() || "").toLowerCase();
+
+    if(ext === "json"){
+      try{
+        const obj = JSON.parse(text);
+        // accept: [{id,title,phase,content,url}...] OR {library:[...]}
+        const arr = Array.isArray(obj) ? obj : (Array.isArray(obj.library) ? obj.library : []);
+        for(const x of arr){
+          const id = normalizeToIdOrNull(x?.id ?? x?.url ?? x);
+          if(id==null) continue;
+          const it = makeItem(id);
+          it.title = x?.title || it.title;
+          it.url = x?.url || it.url;
+          it.phase = x?.phase || it.phase;
+          it.content = x?.content || [];
+          state.library.push(it);
+        }
+        dedupeLibrary();
+        save(); render();
+        showToast("Bibliotheek JSON geïmporteerd.");
+      }catch(e){
+        showToast("JSON kon niet worden gelezen.");
+      }
+    }else{
+      const lines = text.split(/\r?\n/).map(s=>s.trim()).filter(Boolean);
+      addMany(lines);
+    }
+  });
+
+  el("btnExport").addEventListener("click", ()=>{
+    const blob = new Blob([JSON.stringify(state, null, 2)], {type:"application/json"});
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "inforium-zorgpad-demo.json";
+    a.click();
+    URL.revokeObjectURL(a.href);
+    showToast("Export gedownload.");
+  });
+
+  el("btnImport").addEventListener("click", ()=>{
+    const raw = prompt("Plak hier JSON (export) om te importeren:");
+    if(!raw) return;
+    try{
+      const obj = JSON.parse(raw);
+      if(obj && Array.isArray(obj.library) && Array.isArray(obj.path)){
+        state = obj;
+        dedupeLibrary();
+        save(); render();
+        showToast("Import klaar.");
+      }else{
+        showToast("Onverwacht JSON-formaat.");
+      }
+    }catch(e){ showToast("Geen geldige JSON."); }
+  });
+
+  el("btnReset").addEventListener("click", ()=>{
+    if(!confirm("Reset naar defaults (bibliotheek + zorgpad)?")) return;
+    localStorage.removeItem(LS_KEY);
+    state = { library: JSON.parse(JSON.stringify(DEFAULT_LIBRARY)), path: [] };
+    dedupeLibrary();
+    save(); render();
+    showToast("Reset klaar.");
+  });
+
+  el("btnClearPath").addEventListener("click", ()=>{
+    if(!confirm("Zorgpad leegmaken?")) return;
+    state.path = [];
+    save(); render();
+  });
+
+  el("btnCopyLinks").addEventListener("click", async ()=>{
+    const links = state.path.map(s => (state.library.find(x=>x.id===s.id)?.url) || (BASE+s.id));
+    try{
+      await navigator.clipboard.writeText(links.join("\n"));
+      showToast("Links gekopieerd.");
+    }catch(e){
+      showToast("Kopiëren lukt niet in deze browser (clipboard).");
+    }
+  });
+
+  el("btnCopyIds").addEventListener("click", async ()=>{
+    const ids = state.path.map(s => s.id);
+    try{
+      await navigator.clipboard.writeText(ids.join("\n"));
+      showToast("IDs gekopieerd.");
+    }catch(e){
+      showToast("Kopiëren lukt niet in deze browser (clipboard).");
+    }
+  });
+
+  el("search").addEventListener("input", render);
+
+  // ---------- Init ----------
+  const hadSaved = load();
+  if(!hadSaved){
+    state = { library: JSON.parse(JSON.stringify(DEFAULT_LIBRARY)), path: [] };
+  }
+  dedupeLibrary();
+  save();
+  render();
+})();
+</script>
+</body>
+</html>
